@@ -3,78 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مشغل الفيديو الذكي (Offline)</title>
+    <title>صفحة الفيديو الخاصة</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f9; }
-        #videoPlayer { width: 100%; max-width: 600px; border-radius: 10px; display: none; margin-top: 20px; }
-        .status { color: #555; margin: 10px; font-size: 0.9em; }
-        .upload-btn { background: #007bff; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: #f0f2f5; padding: 20px; color: #333; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #007bff; }
+        #videoPlayer { width: 100%; border-radius: 10px; display: none; margin-top: 20px; }
+        .btn { background-color: #28a745; color: white; border: none; padding: 15px 25px; font-size: 18px; border-radius: 8px; cursor: pointer; transition: 0.3s; margin-top: 20px; width: 100%; }
+        .btn:disabled { background-color: #ccc; cursor: not-allowed; }
+        .btn-delete { background-color: #dc3545; font-size: 14px; padding: 8px; margin-top: 10px; }
+        #status { margin-top: 15px; font-size: 14px; color: #666; }
+        .progress-bar { width: 100%; background: #eee; height: 10px; border-radius: 5px; margin-top: 10px; display: none; }
+        #progressFill { width: 0%; height: 100%; background: #28a745; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <h2>مشغل الفيديو أوفلاين</h2>
-    <p class="status" id="status">تحقق من وجود فيديو محفوظ...</p>
+<div class="container">
+    <h2>مرحباً يا صديقي 👋</h2>
+    <p>اضغط على الزر أدناه لتحميل الفيديو ومشاهدته في أي وقت بدون إنترنت.</p>
+    
+    <button id="downloadBtn" class="btn">📥 تحميل الفيديو للمشاهدة أوفلاين</button>
+    
+    <div class="progress-bar" id="progressBar"><div id="progressFill"></div></div>
+    <p id="status">جاهز للتحميل...</p>
 
-    <input type="file" id="videoInput" accept="video/*" style="display:none">
-    <label for="videoInput" class="upload-btn">اختر فيديو لحفظه</label>
-
-    <br>
     <video id="videoPlayer" controls></video>
+    
+    <button id="deleteBtn" class="btn btn-delete" style="display:none;">حذف الفيديو من الذاكرة</button>
+</div>
 
-    <script>
-        const videoInput = document.getElementById('videoInput');
-        const videoPlayer = document.getElementById('videoPlayer');
-        const status = document.getElementById('status');
+<script>
+    const VIDEO_URL = 'v.mp4'; // استبدل هذا باسم ملف الفيديو حقك المرفوع على GitHub
+    const downloadBtn = document.getElementById('downloadBtn');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const status = document.getElementById('status');
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+    const deleteBtn = document.getElementById('deleteBtn');
 
-        // إنشاء أو فتح قاعدة البيانات في المتصفح
-        let db;
-        const request = indexedDB.open("VideoDB", 1);
+    // فتح قاعدة بيانات المتصفح
+    let db;
+    const request = indexedDB.open("OfflineVideoDB", 1);
+    request.onupgradeneeded = e => e.target.result.createObjectStore("videos");
+    request.onsuccess = e => {
+        db = e.target.result;
+        checkIfStored();
+    };
 
-        request.onupgradeneeded = (e) => {
-            db = e.target.result;
-            db.createObjectStore("videos");
-        };
-
-        request.onsuccess = (e) => {
-            db = e.target.result;
-            loadVideoFromDB(); // محاولة تحميل الفيديو عند فتح الصفحة
-        };
-
-        // وظيفة حفظ الفيديو
-        videoInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const transaction = db.transaction(["videos"], "readwrite");
-                transaction.objectStore("videos").put(file, "savedVideo");
-                
-                transaction.oncomplete = () => {
-                    status.innerText = "تم حفظ الفيديو بنجاح! الآن يمكن لصديقك رؤيته بدون إنترنت.";
-                    displayVideo(file);
-                };
+    // التحقق إذا كان الفيديو موجود مسبقاً
+    function checkIfStored() {
+        const transaction = db.transaction("videos", "readonly");
+        const getRequest = transaction.objectStore("videos").get("savedVideo");
+        getRequest.onsuccess = () => {
+            if (getRequest.result) {
+                showVideo(getRequest.result);
+                status.innerText = "الفيديو محمل وجاهز للمشاهدة بدون إنترنت!";
+                downloadBtn.style.display = 'none';
+                deleteBtn.style.display = 'inline-block';
             }
-        });
+        };
+    }
 
-        // وظيفة عرض الفيديو من المتصفح
-        function loadVideoFromDB() {
-            const transaction = db.transaction(["videos"], "readonly");
-            const request = transaction.objectStore("videos").get("savedVideo");
+    // عند الضغط على زر التحميل
+    downloadBtn.onclick = async () => {
+        downloadBtn.disabled = true;
+        status.innerText = "جاري التحميل... يرجى عدم إغلاق الصفحة";
+        progressBar.style.display = 'block';
 
-            request.onsuccess = () => {
-                if (request.result) {
-                    status.innerText = "تم تحميل الفيديو من ذاكرة المتصفح (يعمل بدون إنترنت).";
-                    displayVideo(request.result);
-                } else {
-                    status.innerText = "لا يوجد فيديو محفوظ حالياً.";
-                }
+        try {
+            const response = await fetch(VIDEO_URL);
+            if (!response.ok) throw new Error("فشل التحميل");
+            
+            // محاكاة شريط التحميل
+            const reader = response.body.getReader();
+            const contentLength = +response.headers.get('Content-Length');
+            let receivedLength = 0;
+            let chunks = [];
+
+            while(true) {
+                const {done, value} = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                receivedLength += value.length;
+                let percent = Math.round((receivedLength / contentLength) * 100);
+                progressFill.style.width = percent + '%';
+            }
+
+            const blob = new Blob(chunks);
+            const transaction = db.transaction("videos", "readwrite");
+            transaction.objectStore("videos").put(blob, "savedVideo");
+            
+            transaction.oncomplete = () => {
+                showVideo(blob);
+                status.innerText = "تم التحميل بنجاح! يمكنك الآن إطفاء الإنترنت ومشاهدته.";
+                downloadBtn.style.display = 'none';
+                deleteBtn.style.display = 'inline-block';
             };
+        } catch (err) {
+            status.innerText = "حدث خطأ أثناء التحميل: " + err.message;
+            downloadBtn.disabled = false;
         }
+    };
 
-        function displayVideo(blob) {
-            const videoUrl = URL.createObjectURL(blob);
-            videoPlayer.src = videoUrl;
-            videoPlayer.style.display = 'block';
-        }
-    </script>
+    function showVideo(blob) {
+        videoPlayer.src = URL.createObjectURL(blob);
+        videoPlayer.style.display = 'block';
+        progressBar.style.display = 'none';
+    }
+
+    // زر الحذف لتوفير مساحة
+    deleteBtn.onclick = () => {
+        const transaction = db.transaction("videos", "readwrite");
+        transaction.objectStore("videos").delete("savedVideo");
+        transaction.oncomplete = () => {
+            location.reload();
+        };
+    };
+</script>
+
 </body>
 </html>
