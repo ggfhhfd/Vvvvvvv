@@ -3,102 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>رفع فيديو - ClashData</title>
+    <title>ClashData - رفع الفيديوهات</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 40px; background: #1a1a1a; color: white; }
-        .card { background: #2d2d2d; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 450px; text-align: center; }
-        input[type="file"] { margin: 20px 0; background: #3d3d3d; padding: 10px; border-radius: 8px; width: 90%; }
-        button { background: #ff4757; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-size: 16px; transition: 0.3s; }
-        button:hover { background: #ff6b81; }
-        button:disabled { background: #555; cursor: not-allowed; }
-        #progContainer { width: 100%; background: #444; border-radius: 20px; margin: 20px 0; display: none; overflow: hidden; }
-        #progBar { width: 0%; height: 12px; background: #2ed573; transition: width 0.2s; }
-        #status { margin-top: 15px; font-size: 14px; color: #ffa502; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .upload-container { background: #1e1e1e; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 90%; max-width: 400px; text-align: center; }
+        h2 { color: #ff4757; margin-bottom: 20px; }
+        input[type="file"] { background: #2d2d2d; border: 1px dashed #555; padding: 15px; border-radius: 10px; width: 100%; box-sizing: border-box; cursor: pointer; color: #ccc; margin-bottom: 20px; }
+        button { background: linear-gradient(45deg, #ff4757, #ff6b81); color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .progress-area { margin: 20px 0; display: none; }
+        .bar { background: #333; height: 10px; border-radius: 5px; overflow: hidden; }
+        .fill { background: #2ed573; width: 0%; height: 100%; transition: 0.2s; }
+        #status { font-size: 14px; margin-top: 10px; color: #eccc68; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>رفع فيديو إلى ClashData 🚀</h2>
+<div class="upload-container">
+    <h2>🚀 ClashData</h2>
     <input type="file" id="videoFile" accept="video/*">
     
-    <div id="progContainer">
-        <div id="progBar"></div>
+    <div class="progress-area" id="progressArea">
+        <div class="bar"><div class="fill" id="progressFill"></div></div>
+        <p id="status">جاهز للرفع...</p>
     </div>
 
-    <button id="btn" onclick="startUpload()">ابدأ الرفع الآن</button>
-    <p id="status">انتظار اختيار الملف...</p>
+    <button id="uploadBtn" onclick="startUploadProcess()">ابدأ الرفع الآن</button>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-    import { getDatabase, ref as dRef, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // إعداداتك الخاصة التي أرفقتها
+    // بيانات Firebase الخاصة بك
     const firebaseConfig = {
         apiKey: "AIzaSyAm1OfTW_qS4lhSGlqgDd6fiLDj3u93wqI",
         authDomain: "clashdata-8424c.firebaseapp.com",
         databaseURL: "https://clashdata-8424c-default-rtdb.firebaseio.com",
         projectId: "clashdata-8424c",
         storageBucket: "clashdata-8424c.firebasestorage.app",
-        messagingSenderId: "1063000922754",
-        appId: "1:1063000922754:web:87087f81c28c2659cb329b",
-        measurementId: "G-FEYNVDC4CD"
+        appId: "1:1063000922754:web:87087f81c28c2659cb329b"
     };
 
     const app = initializeApp(firebaseConfig);
-    const storage = getStorage(app);
-    const database = getDatabase(app);
+    const db = getDatabase(app);
 
-    window.startUpload = function() {
-        const file = document.getElementById('videoFile').files[0];
-        const btn = document.getElementById('btn');
+    // بيانات Cloudinary من صورك
+    const CLOUD_NAME = "dkpddgzqj";
+    const UPLOAD_PRESET = "b2aumssr"; 
+
+    window.startUploadProcess = async function() {
+        const fileInput = document.getElementById('videoFile');
+        const file = fileInput.files[0];
+        const btn = document.getElementById('uploadBtn');
         const status = document.getElementById('status');
-        const pBar = document.getElementById('progBar');
-        const pContainer = document.getElementById('progContainer');
+        const progressArea = document.getElementById('progressArea');
+        const progressFill = document.getElementById('progressFill');
 
         if (!file) {
-            alert("يرجى اختيار ملف فيديو!");
+            alert("أرجوك اختر فيديو أولاً!");
             return;
         }
 
         btn.disabled = true;
-        pContainer.style.display = 'block';
-        status.innerText = "جاري الرفع...";
+        progressArea.style.display = 'block';
+        status.innerText = "جاري الاتصال بالسيرفر...";
 
-        const storagePath = `videos/${Date.now()}_${file.name}`;
-        const storageReference = sRef(storage, storagePath);
-        const uploadTask = uploadBytesResumable(storageReference, file);
+        // تجهيز البيانات للإرسال لـ Cloudinary
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', UPLOAD_PRESET);
 
-        uploadTask.on('state_changed', 
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                pBar.style.width = progress + '%';
-                status.innerText = `تم رفع ${Math.round(progress)}%`;
-            }, 
-            (error) => {
-                alert("حدث خطأ: تأكد من إعدادات Rules في Firebase");
-                console.error(error);
-                btn.disabled = false;
-            }, 
-            () => {
-                getDownloadURL(uploadTask.snapshot.ref).then((url) => {
-                    // حفظ البيانات في Realtime Database
-                    const dbRef = dRef(database, 'uploaded_videos');
-                    const newVideo = push(dbRef);
-                    set(newVideo, {
-                        fileName: file.name,
-                        videoUrl: url,
-                        time: new Date().toLocaleString()
-                    }).then(() => {
-                        status.innerText = "تم الرفع بنجاح وحفظ البيانات! ✅";
-                        btn.disabled = false;
-                    });
-                });
+        // استخدام XMLHttpRequest لمتابعة التقدم بدقة
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`, true);
+
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                const percent = (e.loaded / e.total) * 100;
+                progressFill.style.width = percent + '%';
+                status.innerText = `تم رفع: ${Math.round(percent)}%`;
             }
-        );
-    }
+        };
+
+        xhr.onload = function() {
+            const data = JSON.parse(xhr.responseText);
+            if (data.secure_url) {
+                // خطوة حفظ الرابط في Firebase
+                const videoRef = ref(db, 'my_videos');
+                const newVideoEntry = push(videoRef);
+                
+                set(newVideoEntry, {
+                    name: file.name,
+                    url: data.secure_url,
+                    type: "video",
+                    date: new Date().toISOString()
+                }).then(() => {
+                    status.innerText = "تم الرفع والحفظ بنجاح! ✅";
+                    btn.disabled = false;
+                    fileInput.value = "";
+                });
+            } else {
+                status.innerText = "فشل الرفع، تأكد من الإعدادات.";
+                btn.disabled = false;
+            }
+        };
+
+        xhr.onerror = () => {
+            status.innerText = "حدث خطأ في الاتصال.";
+            btn.disabled = false;
+        };
+
+        xhr.send(formData);
+    };
 </script>
 
 </body>
