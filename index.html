@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مشغل فيديو بدون تقطيع</title>
+    <title>مشغل الفيديو الذكي - التخزين الدائم</title>
     <style>
         :root {
             --bg-color: #0f172a;
             --card-bg: #1e293b;
-            --accent-color: #10b981; /* أخضر للتحميل */
+            --accent-color: #818cf8;
+            --success-color: #10b981;
             --text-main: #f1f5f9;
             --input-bg: #334155;
         }
 
         body {
-            font-family: -apple-system, system-ui, sans-serif;
+            font-family: -apple-system, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
@@ -58,13 +59,13 @@
         /* شريط التحميل */
         #loaderContainer {
             display: none;
-            margin-top: 20px;
+            margin: 20px 0;
             text-align: center;
         }
 
         .progress-bar {
             width: 100%;
-            height: 10px;
+            height: 8px;
             background: #334155;
             border-radius: 10px;
             overflow: hidden;
@@ -74,7 +75,7 @@
         #progressFill {
             width: 0%;
             height: 100%;
-            background: var(--accent-color);
+            background: var(--success-color);
             transition: width 0.3s;
         }
 
@@ -89,72 +90,80 @@
 
         video { width: 100%; aspect-ratio: 16 / 9; }
 
-        .history-item {
-            background: var(--input-bg);
-            padding: 12px;
-            border-radius: 12px;
-            margin-top: 8px;
+        .status-badge {
             font-size: 12px;
-            cursor: pointer;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: #334155;
+            margin-top: 10px;
+            display: inline-block;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="text-align:center;">مشغل فيديو (مانع التقطيع)</h2>
+    <h2 style="text-align:center;">المشغل الذكي (تخزين دائم)</h2>
     
-    <input type="text" id="videoUrl" placeholder="أدخل رابط الفيديو المباشر (MP4)...">
-    <button class="main-btn" onclick="preDownloadVideo()">تحميل وتشغيل</button>
+    <input type="text" id="videoUrl" placeholder="أدخل رابط الفيديو المباشر...">
+    <button class="main-btn" onclick="handleAction()">تشغيل / تحميل</button>
 
     <div id="loaderContainer">
-        <span id="loaderStatus">جاري التحميل... 0%</span>
+        <span id="loaderStatus">جاري الفحص...</span>
         <div class="progress-bar"><div id="progressFill"></div></div>
-        <p style="font-size: 12px; color: #94a3b8; margin-top: 5px;">يتم الآن تخزين الفيديو في الذاكرة لضمان عدم التقطيع</p>
     </div>
 
     <div id="videoPreview"></div>
-
-    <h3 style="margin-top:30px; font-size: 1rem;">السجل</h3>
-    <div id="historyContainer"></div>
+    <div id="storageStatus" class="status-badge">بانتظار الرابط...</div>
 </div>
 
 <script>
-    window.onload = displayHistory;
+    // 1. إعداد قاعدة بيانات المتصفح (IndexedDB)
+    const dbName = "VideoCacheDB";
+    let db;
+    const request = indexedDB.open(dbName, 1);
 
-    async function preDownloadVideo() {
+    request.onupgradeneeded = (e) => {
+        db = e.target.result;
+        db.createObjectStore("videos", { keyPath: "url" });
+    };
+
+    request.onsuccess = (e) => { db = e.target.result; };
+
+    async function handleAction() {
         const url = document.getElementById('videoUrl').value.trim();
+        if (!url) return;
+
+        // فحص هل الفيديو مخزن مسبقاً؟
+        const transaction = db.transaction(["videos"], "readonly");
+        const store = transaction.objectStore("videos");
+        const getRequest = store.get(url);
+
+        getRequest.onsuccess = async () => {
+            if (getRequest.result) {
+                // الفيديو موجود! شغله فوراً
+                document.getElementById('storageStatus').innerText = "✅ يتم التشغيل من ذاكرة الجوال (بدون إنترنت)";
+                playBlob(getRequest.result.blob);
+            } else {
+                // الفيديو غير موجود، ابدأ التحميل والتخزين
+                downloadAndSave(url);
+            }
+        };
+    }
+
+    async function downloadAndSave(url) {
         const loader = document.getElementById('loaderContainer');
         const progressFill = document.getElementById('progressFill');
         const loaderStatus = document.getElementById('loaderStatus');
-        const preview = document.getElementById('videoPreview');
-
-        if (!url) return;
         
-        // روابط يوتيوب لا تدعم التحميل المسبق بهذه الطريقة (سياسة جوجل)
-        if (url.includes('youtube.com') || url.includes('youtu.be')) {
-            alert("ملاحظة: روابط يوتيوب تعمل بنظام البث المباشر ولا تدعم التحميل الكامل المسبق هنا.");
-            playDirectly(url);
-            return;
-        }
-
         loader.style.display = 'block';
-        preview.style.display = 'none';
-        progressFill.style.width = '0%';
+        document.getElementById('videoPreview').style.display = 'none';
 
         try {
             const response = await fetch(url);
-            if (!response.ok) throw new Error();
-
             const contentLength = response.headers.get('content-length');
-            if (!contentLength) {
-                loaderStatus.innerText = "جاري التحميل (الحجم غير معروف)...";
-            }
-
             const reader = response.body.getReader();
+            
             let loaded = 0;
             let chunks = [];
 
@@ -163,58 +172,32 @@
                 if (done) break;
                 chunks.push(value);
                 loaded += value.length;
-                
-                if (contentLength) {
-                    const percent = Math.round((loaded / contentLength) * 100);
-                    progressFill.style.width = percent + '%';
-                    loaderStatus.innerText = `جاري التحميل... ${percent}%`;
-                }
+                const percent = Math.round((loaded / contentLength) * 100);
+                progressFill.style.width = percent + '%';
+                loaderStatus.innerText = `جاري التحميل لأول مرة: ${percent}%`;
             }
 
-            // تحويل البيانات المحملة إلى رابط محلي (Blob)
             const blob = new Blob(chunks);
-            const blobUrl = URL.createObjectURL(blob);
             
+            // تخزين في قاعدة البيانات
+            const transaction = db.transaction(["videos"], "readwrite");
+            transaction.objectStore("videos").add({ url: url, blob: blob });
+
             loader.style.display = 'none';
-            playDirectly(blobUrl, true); // تشغيل من الذاكرة
-            saveToHistory(url);
+            document.getElementById('storageStatus').innerText = "✅ تم الحفظ في المتصفح بنجاح";
+            playBlob(blob);
 
         } catch (e) {
-            alert("فشل التحميل. تأكد من أن الرابط مباشر ويسمح بالتحميل (CORS).");
+            alert("فشل التحميل. تأكد أن الرابط مباشر.");
             loader.style.display = 'none';
         }
     }
 
-    function playDirectly(url, isBlob = false) {
+    function playBlob(blob) {
         const preview = document.getElementById('videoPreview');
-        preview.innerHTML = '';
-        
-        if (url.includes('youtube.com') || url.includes('youtu.be')) {
-            const id = url.match(/(?:v=|be\/)([^\s&?]+)/)[1];
-            preview.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}" allowfullscreen></iframe>`;
-        } else {
-            preview.innerHTML = `<video controls autoplay playsinline><source src="${url}"></video>`;
-        }
-        
+        const blobUrl = URL.createObjectURL(blob);
+        preview.innerHTML = `<video controls autoplay playsinline><source src="${blobUrl}"></video>`;
         preview.style.display = 'block';
-    }
-
-    // سجل المشاهدة (نفس الوظائف السابقة)
-    function saveToHistory(url) {
-        let history = JSON.parse(localStorage.getItem('videoHistory') || '[]');
-        history = [url, ...history.filter(i => i !== url)].slice(0, 10);
-        localStorage.setItem('videoHistory', JSON.stringify(history));
-        displayHistory();
-    }
-
-    function displayHistory() {
-        const container = document.getElementById('historyContainer');
-        const history = JSON.parse(localStorage.getItem('videoHistory') || '[]');
-        container.innerHTML = history.map(url => `
-            <div class="history-item" onclick="document.getElementById('videoUrl').value='${url}'; preDownloadVideo();">
-                ${url}
-            </div>
-        `).join('');
     }
 </script>
 
