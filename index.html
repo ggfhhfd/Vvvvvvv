@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مستودع أرشيف سبيستون</title>
+    <title>مستودع الأرشيف</title>
     <style>
         :root {
             --bg: #020617;
@@ -53,7 +53,6 @@
             background: #1e293b; padding: 14px; border-radius: 14px; margin-bottom: 10px;
             display: flex; justify-content: space-between; align-items: center; font-size: 13px; cursor: pointer; transition: 0.2s;
         }
-        .item:active { transform: scale(0.98); background: #334155; }
         .item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 75%; }
         
         .del-btn { background: #ef4444; color: white; padding: 6px 10px; border-radius: 8px; font-size: 10px; border: none; }
@@ -62,7 +61,7 @@
 <body>
 
 <div class="container">
-    <h2>أرشيف القناة 📼</h2>
+    <h2>أرشيفك الخاص 📼</h2>
     
     <input type="text" id="urlInput" placeholder="ضع رابط الفيديو هنا...">
     
@@ -80,7 +79,7 @@
 
     <div id="videoBox"></div>
 
-    <div class="section-title">🌍 أرشيف الشبكة (للجميع)</div>
+    <div class="section-title">🌍 أرشيف الشبكة (فارغ حالياً)</div>
     <div id="publicList"></div>
 
     <div class="section-title">🔒 مكتبتك المحفوظة (أوفلاين)</div>
@@ -88,14 +87,10 @@
 </div>
 
 <script>
-    // --- إعدادات الأرشيف العام ---
-    // هنا تضع اسم الفيديو الذي ترفعه على GitHub أو رابطه المباشر
-    const publicPlaylist = [
-        { name: "فيديو سبيستون 2001", url: "https://abra--5e4bd524.api.cosmic-crab.buzz/93743992fdffe15b7e075a2e81c5b05c5072c1bc/%D8%A7%D8%B1%D8%B4%D9%8A%D9%81%20%D9%82%D9%86%D8%A7%D8%A9%20%D8%B3%D8%A8%D9%8A%D8%B3%D8%AA%D9%88%D9%86%20%D9%85%D9%86%20%D8%B3%D9%86%D8%A9%202000%20%D8%A7%D9%84%D9%89%202001/2001-new-boy-asbys-ton-daaay-alaloan-alshry-mn.mp4?api-key=8acbcf1e-732c-4574-a3bf-27e6a85b86f1&download=true&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjgxNjIwNjcsInJhdGUiOiI1TSIsInJvbGUiOiJmcmVlIiwic2Vzc2lvbklEIjoiTVRjMk5qTXpORGMxTW54T2QzZEJUa1pzVUZORk5VUlJWbWhZVlZVMVVGTlZiRk5VVm1kNVYxWnNVMVpGUmtWU1JWRXdUVEE1V0ZacVVrbE5hazVLVTBVMVNGTlZNVWRXYTNoaFRXc3hSVlpFV2tkTk1FVTlmUFhVQTl0VjJsOURkcEh0RGEzVjJoTlM1N1lzV3Rfd0s2VW5sUGl6N2tOUyIsImRvbWFpbiI6IndlYnRvci5pbyIsImFnZW50IjoiTW96aWxsYS81LjAgKE1hY2ludG9zaDsgSW50ZWwgTWFjIE9TIFggMTBfMTVfNykgQXBwbGVXZWJLaXQvNjA1LjEuMTUgKEtIVE1MLCBsaWtlIEdlY2tvKSBWZXJzaW9uLzE2LjYuMSBTYWZhcmkvNjA1LjEuMTUiLCJyZW1vdGVBZGRyZXNzIjoiMjAwMToxNmE0OjJlNzphZjk1OjZkOTQ6ZDE2Nzo0OWE6NWJhNSJ9.sxGhoYLer04LWYEYlL8bTvkKITbWTUmrn9eA3Im5Kio" },
-        { name: "فاصل قديم نادراً", url: "https://رابط-آخر-مباشر.mp4" }
-    ];
+    // --- الأرشيف العام (فارغ حالياً كما طلبت) ---
+    const publicPlaylist = [];
 
-    const dbName = "MegaArchiveDB";
+    const dbName = "MegaArchiveDB_V2";
     let db;
 
     const req = indexedDB.open(dbName, 1);
@@ -108,16 +103,16 @@
 
     function renderPublicPlaylist() {
         const pList = document.getElementById('publicList');
+        if (publicPlaylist.length === 0) {
+            pList.innerHTML = '<p style="color:#475569; font-size:12px; text-align:center;">لا توجد فيديوهات عامة مضافة.</p>';
+            return;
+        }
         pList.innerHTML = '';
         publicPlaylist.forEach(item => {
             const div = document.createElement('div');
             div.className = 'item';
-            div.style.borderRight = "4px solid var(--accent)";
             div.innerHTML = `<span>📺 ${item.name}</span>`;
-            div.onclick = () => {
-                document.getElementById('urlInput').value = item.url;
-                handleUrl();
-            };
+            div.onclick = () => { document.getElementById('urlInput').value = item.url; handleUrl(); };
             pList.appendChild(div);
         });
     }
@@ -125,17 +120,14 @@
     async function handleUrl() {
         const url = document.getElementById('urlInput').value.trim();
         if (!url) return;
-
         const check = await getFromDB(url);
         if (check) { play(check.blob); return; }
-
-        showLoader(true, "جاري التحميل والتخزين للأبد...");
+        showLoader(true, "جاري التحميل...");
         try {
             const res = await fetch(url);
-            const total = +res.headers.get('content-length') || 0;
             const reader = res.body.getReader();
+            const total = +res.headers.get('content-length') || 0;
             let loaded = 0, chunks = [];
-
             while(true) {
                 const {done, value} = await reader.read();
                 if (done) break;
@@ -146,14 +138,14 @@
             const blob = new Blob(chunks);
             await saveToDB(url, blob, "رابط");
             play(blob);
-        } catch(e) { alert("عذراً، هذا الرابط محمي أو غير مباشر."); }
+        } catch(e) { alert("تأكد أن الرابط مباشر ويسمح بالتحميل."); }
         showLoader(false);
     }
 
     async function handleFileUpload(e) {
         const file = e.target.files[0];
         if (!file) return;
-        showLoader(true, "جاري نسخ الملف للمكتبة...");
+        showLoader(true, "جاري النسخ للمتصفح...");
         await saveToDB(file.name, file, "محلي");
         updateProgress(100);
         setTimeout(() => { showLoader(false); play(file); renderLibrary(); }, 500);
@@ -162,7 +154,7 @@
     function saveToDB(id, blob, type) {
         return new Promise(res => {
             const tx = db.transaction("files", "readwrite");
-            tx.objectStore("files").put({ id, blob, type, date: new Date().toLocaleDateString() });
+            tx.objectStore("files").put({ id, blob, type });
             tx.oncomplete = () => { renderLibrary(); res(); };
         });
     }
@@ -178,7 +170,7 @@
         const list = document.getElementById('list');
         db.transaction("files", "readonly").objectStore("files").getAll().onsuccess = (e) => {
             const items = e.target.result;
-            list.innerHTML = items.length ? '' : '<p style="color:#475569; font-size:12px; text-align:center;">المكتبة الشخصية فارغة</p>';
+            list.innerHTML = items.length ? '' : '<p style="color:#475569; font-size:12px; text-align:center;">المكتبة فارغة</p>';
             items.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'item';
@@ -190,7 +182,7 @@
     }
 
     function deleteItem(id) {
-        if(confirm("حذف الفيديو من الذاكرة؟")) {
+        if(confirm("حذف الفيديو؟")) {
             const tx = db.transaction("files", "readwrite");
             tx.objectStore("files").delete(id);
             tx.oncomplete = () => renderLibrary();
@@ -199,8 +191,7 @@
 
     function play(blob) {
         const box = document.getElementById('videoBox');
-        const vUrl = URL.createObjectURL(blob);
-        box.innerHTML = `<video controls autoplay playsinline><source src="${vUrl}"></video>`;
+        box.innerHTML = `<video controls autoplay playsinline><source src="${URL.createObjectURL(blob)}"></video>`;
         box.style.display = 'block';
         box.scrollIntoView({behavior: 'smooth'});
     }
@@ -212,6 +203,5 @@
 
     function updateProgress(p) { document.getElementById('fill').style.width = p + '%'; }
 </script>
-
 </body>
 </html>
