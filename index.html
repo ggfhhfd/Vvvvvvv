@@ -3,114 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مشغل سبيستون أوفلاين</title>
+    <title>مشغل الفيديو - سبيستون</title>
     <style>
         body { font-family: sans-serif; text-align: center; background-color: #f0f2f5; padding: 20px; }
         .container { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        #videoPlayer { width: 100%; border-radius: 10px; display: none; margin-top: 20px; background: black; }
-        .btn { background-color: #28a745; color: white; border: none; padding: 15px 25px; font-size: 18px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 20px; }
+        video { width: 100%; border-radius: 10px; display: none; margin-top: 20px; background: #000; }
+        .btn { background-color: #28a745; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; width: 100%; font-size: 18px; font-weight: bold; }
         .btn:disabled { background-color: #ccc; }
-        #status { margin-top: 15px; font-size: 14px; color: #666; }
-        .progress-bar { width: 100%; background: #eee; height: 10px; border-radius: 5px; margin-top: 10px; display: none; overflow: hidden; }
-        #progressFill { width: 0%; height: 100%; background: #007bff; transition: width 0.1s; }
-        .delete-btn { background: #dc3545; margin-top: 10px; font-size: 12px; padding: 5px; color: white; border: none; border-radius: 4px; display: none; cursor: pointer; }
+        #status { margin-top: 15px; color: #555; font-size: 14px; line-height: 1.6; }
+        .loader { width: 100%; height: 8px; background: #eee; border-radius: 4px; display: none; margin-top: 10px; overflow: hidden; }
+        #progress { width: 0%; height: 100%; background: #007bff; transition: 0.3s; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>ذكريات سبيستون 📺</h2>
-    <p>اضغط تحميل لمشاهدة "اضحك مع كونان" في أي وقت بدون إنترنت.</p>
+    <p>اضغط الزر للتحميل، وبعدها تقدر تشوفه بدون نت نهائياً.</p>
     
-    <button id="downloadBtn" class="btn">📥 تحميل الفيديو الآن</button>
-    
-    <div class="progress-bar" id="progressBar"><div id="progressFill"></div></div>
+    <button id="dlBtn" class="btn">📥 ابدأ تحميل الفيديو</button>
+    <div class="loader" id="loader"><div id="progress"></div></div>
     <p id="status">جاهز للتحميل...</p>
 
-    <video id="videoPlayer" controls playsinline></video>
-    <br>
-    <button id="deleteBtn" class="delete-btn">حذف الفيديو المسجل</button>
+    <video id="player" controls playsinline></video>
 </div>
 
 <script>
-    // رابط الفيديو المباشر الذي أرسلته
-    const VIDEO_URL = "https://abra--5e4bd524.api.cosmic-crab.buzz/93743992fdffe15b7e075a2e81c5b05c5072c1bc/%D8%A7%D8%B1%D8%B4%D9%8A%D9%81%20%D9%82%D9%86%D8%A7%D8%A9%20%D8%B3%D8%A8%D9%8A%D8%B3%D8%AA%D9%88%D9%86%20%D9%85%D9%86%20%D8%B3%D9%86%D8%A9%202000%20%D8%A7%D9%84%D9%8ى%202001/adhk-konan-sbys-ton.mp4?api-key=8acbcf1e-732c-4574-a3bf-27e6a85b86f1&download=true";
+    // الرابط مع بروكسي لفك الحماية
+    const ORIGIN_URL = "https://abra--5e4bd524.api.cosmic-crab.buzz/93743992fdffe15b7e075a2e81c5b05c5072c1bc/%D8%A7%D8%B1%D8%B4%D9%8A%D9%81%20%D9%82%D9%86%D8%A7%D8%A9%20%D8%B3%D8%A8%D9%8A%D8%B3%D8%AA%D9%88%D9%86%20%D9%85%D9%86%20%D8%B3%D9%86%D8%A9%202000%20%D8%A7%D9%84%D9%89%202001/adhk-konan-sbys-ton.mp4?api-key=8acbcf1e-732c-4574-a3bf-27e6a85b86f1&download=true";
+    const PROXY_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(ORIGIN_URL);
 
-    const downloadBtn = document.getElementById('downloadBtn');
-    const videoPlayer = document.getElementById('videoPlayer');
+    const dlBtn = document.getElementById('dlBtn');
+    const player = document.getElementById('player');
     const status = document.getElementById('status');
-    const progressBar = document.getElementById('progressBar');
-    const progressFill = document.getElementById('progressFill');
-    const deleteBtn = document.getElementById('deleteBtn');
+    const loader = document.getElementById('loader');
+    const progress = document.getElementById('progress');
 
     let db;
-    const request = indexedDB.open("SpacetoonDB", 1);
-    request.onupgradeneeded = e => e.target.result.createObjectStore("videos");
-    request.onsuccess = e => {
+    const req = indexedDB.open("VideoStore", 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore("files");
+    req.onsuccess = e => {
         db = e.target.result;
-        checkVideo();
+        checkSaved();
     };
 
-    function checkVideo() {
-        const tx = db.transaction("videos", "readonly");
-        const req = tx.objectStore("videos").get("savedVideo");
-        req.onsuccess = () => {
-            if (req.result) {
-                renderVideo(req.result);
-                status.innerText = "الفيديو محفوظ وجاهز للمشاهدة أوفلاين!";
-                downloadBtn.style.display = 'none';
-                deleteBtn.style.display = 'inline-block';
+    function checkSaved() {
+        const tx = db.transaction("files", "readonly");
+        const store = tx.objectStore("files").get("konan");
+        store.onsuccess = () => {
+            if (store.result) {
+                const url = URL.createObjectURL(store.result);
+                player.src = url;
+                player.style.display = 'block';
+                status.innerHTML = "✅ الفيديو محفوظ الآن في هاتفك.<br>جرب طفي النت وشغل الصفحة!";
+                dlBtn.style.display = 'none';
             }
         };
     }
 
-    downloadBtn.onclick = async () => {
-        downloadBtn.disabled = true;
-        status.innerText = "جاري التحميل من السيرفر...";
-        progressBar.style.display = 'block';
+    dlBtn.onclick = async () => {
+        dlBtn.disabled = true;
+        status.innerText = "جاري كسر الحماية وتحميل الفيديو... انتظر قليلاً";
+        loader.style.display = 'block';
 
         try {
-            const response = await fetch(VIDEO_URL);
-            const reader = response.body.getReader();
-            const contentLength = +response.headers.get('Content-Length');
-            let receivedLength = 0;
-            let chunks = [];
-
-            while(true) {
-                const {done, value} = await reader.read();
-                if (done) break;
-                chunks.push(value);
-                receivedLength += value.length;
-                if (contentLength) {
-                    progressFill.style.width = Math.round((receivedLength / contentLength) * 100) + '%';
-                }
-            }
-
-            const blob = new Blob(chunks, { type: 'video/mp4' });
-            const tx = db.transaction("videos", "readwrite");
-            tx.objectStore("videos").put(blob, "savedVideo");
+            const response = await fetch(PROXY_URL);
+            if (!response.ok) throw new Error();
+            
+            const blob = await response.blob();
+            const tx = db.transaction("files", "readwrite");
+            tx.objectStore("files").put(blob, "konan");
             
             tx.oncomplete = () => {
-                renderVideo(blob);
-                status.innerText = "تم الحفظ! يمكنك الآن إطفاء النت ومشاهدته.";
-                downloadBtn.style.display = 'none';
-                deleteBtn.style.display = 'inline-block';
+                location.reload();
             };
         } catch (err) {
-            status.innerText = "خطأ: تأكد من اتصالك بالنت أثناء التحميل.";
-            downloadBtn.disabled = false;
+            status.innerText = "فشل التحميل. الرابط قديم أو السيرفر محمي جداً. حاول مرة أخرى.";
+            dlBtn.disabled = false;
         }
-    };
-
-    function renderVideo(blob) {
-        videoPlayer.src = URL.createObjectURL(blob);
-        videoPlayer.style.display = 'block';
-        progressBar.style.display = 'none';
-    }
-
-    deleteBtn.onclick = () => {
-        db.transaction("videos", "readwrite").objectStore("videos").delete("savedVideo");
-        location.reload();
     };
 </script>
 </body>
