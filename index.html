@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مشغل الفيديوهات الذكي</title>
+    <title>مشغل الفيديو المطور</title>
     <style>
         :root {
             --primary-color: #2563eb;
@@ -23,63 +23,74 @@
 
         .container {
             background: var(--card-bg);
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
             width: 90%;
-            max-width: 700px;
+            max-width: 800px;
             text-align: center;
         }
 
-        h2 { color: #1e293b; margin-bottom: 1.5rem; }
+        h2 { color: #1e293b; margin-bottom: 1.5rem; font-size: 24px; }
 
         .input-box {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 12px;
+            margin-bottom: 15px;
         }
 
         input {
             flex: 1;
-            padding: 12px 15px;
+            padding: 14px 18px;
             border: 2px solid #e2e8f0;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 16px;
             outline: none;
-            transition: 0.3s;
+            transition: all 0.3s ease;
         }
 
-        input:focus { border-color: var(--primary-color); }
+        input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
 
         button {
-            padding: 10px 25px;
+            padding: 10px 30px;
             background: var(--primary-color);
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 600;
+            font-size: 16px;
             transition: 0.3s;
         }
 
-        button:hover { background: #1d4ed8; }
+        button:hover { background: #1d4ed8; transform: translateY(-1px); }
 
         #videoPreview {
-            margin-top: 20px;
-            display: none; /* مخفي حتى يتم وضع رابط */
+            margin-top: 25px;
+            display: none;
             width: 100%;
-            border-radius: 10px;
+            border-radius: 15px;
             overflow: hidden;
             background: #000;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
         }
 
-        iframe, video {
+        video, iframe {
             width: 100%;
             aspect-ratio: 16 / 9;
+            display: block;
             border: none;
         }
 
-        .status { margin-top: 10px; font-size: 14px; }
+        .status { 
+            margin-top: 15px; 
+            font-size: 15px; 
+            font-weight: 500;
+            min-height: 22px;
+        }
     </style>
 </head>
 <body>
@@ -88,7 +99,7 @@
     <h2>لصق رابط الفيديو</h2>
     
     <div class="input-box">
-        <input type="text" id="videoUrl" placeholder="ضع رابط يوتيوب أو رابط مباشر (MP4)...">
+        <input type="text" id="videoUrl" placeholder="أدخل رابط الفيديو (MP4, MKV, YouTube...)">
         <button onclick="handleVideo()">تشغيل</button>
     </div>
 
@@ -99,44 +110,52 @@
 
 <script>
     function handleVideo() {
-        const url = document.getElementById('videoUrl').value.trim();
+        const urlInput = document.getElementById('videoUrl').value.trim();
         const preview = document.getElementById('videoPreview');
         const status = document.getElementById('status');
         
-        preview.innerHTML = ''; // مسح المعاينة السابقة
+        // تنظيف المحتوى السابق
+        preview.innerHTML = '';
         preview.style.display = 'none';
         status.innerText = "";
 
-        if (!url) {
-            status.innerText = "⚠️ يرجى إدخال رابط!";
-            status.style.color = "red";
+        if (!urlInput) {
+            status.innerText = "⚠️ يرجى إدخال الرابط أولاً";
+            status.style.color = "#dc2626";
             return;
         }
 
-        // 1. التحقق إذا كان رابط يوتيوب
-        const youtubeMatch = url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([^\s&]+)/);
+        // 1. فحص روابط يوتيوب
+        const youtubeMatch = urlInput.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([^\s&?]+)/);
         
+        // 2. فحص روابط الفيديو المباشرة (حتى لو فيها Token أو معاملات أخرى)
+        const directVideoRegex = /\.(mp4|webm|ogg|mov|m4v|mkv)/i;
+        const isDirectVideo = directVideoRegex.test(urlInput);
+
         if (youtubeMatch) {
             const videoId = youtubeMatch[1];
-            preview.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>`;
-            preview.style.display = 'block';
-            status.innerText = "✅ تم التعرف على رابط يوتيوب";
-            status.style.color = "green";
+            preview.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+            showVideo("✅ تم تشغيل فيديو يوتيوب بنجاح");
         } 
-        // 2. التحقق إذا كان رابط مباشر (MP4, WebM, OGG)
-        else if (url.match(/\.(mp4|webm|ogg|mov)$/i)) {
+        else if (isDirectVideo) {
+            // تشغيل الرابط المباشر في مشغل HTML5
             preview.innerHTML = `
                 <video controls autoplay>
-                    <source src="${url}" type="video/mp4">
-                    متصفحك لا يدعم تشغيل هذا الفيديو.
+                    <source src="${urlInput}" type="video/mp4">
+                    <source src="${urlInput}" type="video/webm">
+                    عذراً، متصفحك لا يدعم تشغيل هذا الفيديو.
                 </video>`;
-            preview.style.display = 'block';
-            status.innerText = "✅ تم التعرف على ملف فيديو مباشر";
-            status.style.color = "green";
+            showVideo("✅ جاري تشغيل الفيديو من الرابط المباشر");
         } 
         else {
             status.innerText = "❌ عذراً، الصيغة غير مدعومة للمعاينة المباشرة.";
-            status.style.color = "red";
+            status.style.color = "#dc2626";
+        }
+
+        function showVideo(msg) {
+            preview.style.display = 'block';
+            status.innerText = msg;
+            status.style.color = "#059669";
         }
     }
 </script>
