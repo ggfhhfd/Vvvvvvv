@@ -3,105 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مشغل الفيديو أوفلاين</title>
+    <title>مشاهدة الفيديو</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f4; }
-        video { width: 100%; max-width: 600px; border-radius: 10px; background: #000; }
-        #status { margin: 20px; color: #555; }
-        button { padding: 15px 25px; font-size: 16px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 5px; }
-        button:disabled { background: #ccc; }
-        .progress-bar { width: 100%; max-width: 600px; height: 10px; background: #ddd; margin: 10px auto; display: none; }
-        #progress { height: 100%; background: #007bff; width: 0%; }
+        body { font-family: sans-serif; background-color: #121212; color: white; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        .container { width: 90%; max-width: 600px; background: #1e1e1e; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        video { width: 100%; border-radius: 12px; background: #000; margin-bottom: 20px; }
+        .btn-link { display: inline-block; background: #00c853; color: white; padding: 12px 25px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        .btn-link:hover { background: #00a042; }
+        p { color: #888; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <h2>مشغل الفيديو الذكي (بدون نت)</h2>
+<div class="container">
+    <h2 style="color: #00c853; margin-bottom: 10px;">الفيديو جاهز</h2>
     
-    <video id="videoPlayer" controls poster="https://via.placeholder.com/600x340?text=Video+Player"></video>
-    
-    <div id="status">الفيديو غير محمل في الذاكرة.</div>
-    
-    <div class="progress-bar" id="progressBar"><div id="progress"></div></div>
-    
-    <button id="downloadBtn">تحميل الفيديو للمشاهدة بدون إنترنت</button>
+    <video controls playsinline preload="metadata">
+        <source src="Vid1.mp4" type="video/mp4">
+        متصفحك لا يدعم هذا المشغل.
+    </video>
 
-    <script>
-        const VIDEO_URL = 'v.mp4'; // ضع رابط الفيديو المباشر هنا
-        const DB_NAME = "VideoStore";
-        const STORE_NAME = "videos";
-        let db;
+    <p>إذا لم يعمل المشغل أعلاه، اضغط على الزر بالأسفل:</p>
+    <a href="Vid1.mp4" class="btn-link">فتح الفيديو برابط مباشر</a>
+</div>
 
-        // 1. فتح قاعدة البيانات
-        const request = indexedDB.open(DB_NAME, 1);
-        request.onupgradeneeded = e => {
-            e.target.result.createObjectStore(STORE_NAME);
-        };
-        request.onsuccess = e => {
-            db = e.target.result;
-            checkIfVideoExists();
-        };
-
-        // 2. التحقق هل الفيديو موجود مسبقاً؟
-        function checkIfVideoExists() {
-            const transaction = db.transaction([STORE_NAME], "readonly");
-            const getRequest = transaction.objectStore(STORE_NAME).get("mainVideo");
-            getRequest.onsuccess = () => {
-                if (getRequest.result) {
-                    displayVideo(getRequest.result);
-                    document.getElementById('status').innerText = "✅ الفيديو محمل وجاهز للمشاهدة بدون نت.";
-                    document.getElementById('downloadBtn').innerText = "تحديث الفيديو (تحميل مرة أخرى)";
-                }
-            };
-        }
-
-        // 3. تحميل الفيديو وحفظه
-        document.getElementById('downloadBtn').onclick = async () => {
-            const btn = document.getElementById('downloadBtn');
-            const progressDiv = document.getElementById('progressBar');
-            const progressFill = document.getElementById('progress');
-            
-            btn.disabled = true;
-            progressDiv.style.display = 'block';
-            document.getElementById('status').innerText = "جاري التحميل... يرجى عدم إغلاق الصفحة";
-
-            try {
-                const response = await fetch(VIDEO_URL);
-                const reader = response.body.getReader();
-                const contentLength = +response.headers.get('Content-Length');
-                
-                let receivedLength = 0;
-                let chunks = []; 
-                
-                while(true) {
-                    const {done, value} = await reader.read();
-                    if (done) break;
-                    chunks.push(value);
-                    receivedLength += value.length;
-                    let step = (receivedLength / contentLength) * 100;
-                    progressFill.style.width = step + '%';
-                }
-
-                const blob = new Blob(chunks);
-                const transaction = db.transaction([STORE_NAME], "readwrite");
-                transaction.objectStore(STORE_NAME).put(blob, "mainVideo");
-
-                transaction.oncomplete = () => {
-                    displayVideo(blob);
-                    document.getElementById('status').innerText = "✅ تم الحفظ! جرب الآن إغلاق النت وتحديث الصفحة.";
-                    btn.disabled = false;
-                };
-            } catch (error) {
-                alert("خطأ في التحميل: تأكد من الرابط أو اتصالك.");
-                btn.disabled = false;
-            }
-        };
-
-        // 4. عرض الفيديو من الذاكرة
-        function displayVideo(blob) {
-            const videoUrl = URL.createObjectURL(blob);
-            document.getElementById('videoPlayer').src = videoUrl;
-        }
-    </script>
 </body>
 </html>
