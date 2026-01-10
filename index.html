@@ -3,131 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مستودع الأرشيف</title>
+    <title>مستودع الأرشيف Pro</title>
     <style>
         :root {
-            --bg: #020617;
-            --card: #0f172a;
+            --bg: #0f172a;
+            --card: #1e293b;
             --primary: #6366f1;
+            --primary-hover: #4f46e5;
             --success: #10b981;
+            --danger: #ef4444;
             --text: #f8fafc;
+            --text-dim: #94a3b8;
             --accent: #f59e0b;
         }
 
         body {
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 20px 15px;
+            padding: 20px 10px;
             display: flex;
             justify-content: center;
+            min-height: 100vh;
         }
 
-        .container { width: 100%; max-width: 500px; background: var(--card); padding: 25px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05); }
-
-        h2 { text-align: center; color: var(--primary); margin-bottom: 20px; font-size: 1.6rem; }
-
-        input[type="text"] {
-            width: 100%; padding: 15px; border-radius: 12px; border: 2px solid #1e293b;
-            background: #020617; color: white; margin-bottom: 10px; box-sizing: border-box; outline: none;
+        .container { 
+            width: 100%; 
+            max-width: 600px; 
+            background: var(--card); 
+            padding: 25px; 
+            border-radius: 24px; 
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        h2 { text-align: center; color: var(--primary); margin-bottom: 25px; font-size: 1.8rem; letter-spacing: -1px; }
 
-        button { padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px; }
+        .input-group { position: relative; margin-bottom: 15px; }
+        input[type="text"], .search-bar {
+            width: 100%; padding: 15px 20px; border-radius: 14px; border: 2px solid #334155;
+            background: #020617; color: white; box-sizing: border-box; outline: none;
+            transition: border-color 0.3s;
+        }
+        input:focus { border-color: var(--primary); }
+
+        .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
+
+        button { 
+            padding: 14px; border-radius: 12px; border: none; font-weight: 600; 
+            cursor: pointer; transition: all 0.2s; font-size: 14px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
 
         .btn-url { background: var(--primary); color: white; }
-        .btn-file { background: #1e293b; color: white; border: 1px solid var(--primary); }
+        .btn-url:hover { background: var(--primary-hover); transform: translateY(-2px); }
+        .btn-file { background: transparent; color: white; border: 2px solid var(--primary); }
+        .btn-file:hover { background: rgba(99, 102, 241, 0.1); }
 
-        #videoBox { display: none; width: 100%; border-radius: 18px; overflow: hidden; background: #000; margin-top: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-        video { width: 100%; aspect-ratio: 16/9; display: block; }
+        #videoBox { 
+            display: none; width: 100%; border-radius: 20px; overflow: hidden; 
+            background: #000; margin-top: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        video { width: 100%; display: block; }
 
-        .loader { display: none; text-align: center; margin: 15px 0; }
-        .bar { width: 100%; height: 6px; background: #1e293b; border-radius: 10px; overflow: hidden; margin-top: 5px; }
-        .fill { width: 0%; height: 100%; background: var(--success); }
+        .loader { display: none; margin: 20px 0; background: rgba(2, 6, 23, 0.5); padding: 15px; border-radius: 15px; }
+        .bar { width: 100%; height: 8px; background: #334155; border-radius: 10px; overflow: hidden; margin-top: 10px; }
+        .fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--primary), var(--success)); transition: width 0.3s; }
 
-        .section-title { font-size: 14px; color: var(--accent); margin: 25px 0 10px; border-bottom: 1px solid #1e293b; padding-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+        .section-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin: 30px 0 15px; border-bottom: 1px solid #334155; padding-bottom: 8px;
+        }
+        .section-title { font-size: 14px; color: var(--accent); font-weight: bold; }
+        
+        .search-bar { padding: 8px 15px; font-size: 12px; margin-bottom: 15px; border-radius: 8px; }
+
+        .list-container { max-height: 400px; overflow-y: auto; padding-right: 5px; }
+        .list-container::-webkit-scrollbar { width: 5px; }
+        .list-container::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
 
         .item {
-            background: #1e293b; padding: 14px; border-radius: 14px; margin-bottom: 10px;
-            display: flex; justify-content: space-between; align-items: center; font-size: 13px; cursor: pointer; transition: 0.2s;
+            background: #334155; padding: 14px; border-radius: 16px; margin-bottom: 12px;
+            display: flex; justify-content: space-between; align-items: center; 
+            transition: 0.3s; border: 1px solid transparent;
         }
-        .item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 75%; }
+        .item:hover { background: #475569; border-color: var(--primary); }
         
-        .del-btn { background: #ef4444; color: white; padding: 6px 10px; border-radius: 8px; font-size: 10px; border: none; }
+        .item-info { display: flex; flex-direction: column; gap: 4px; max-width: 70%; cursor: pointer; }
+        .item-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-meta { font-size: 10px; color: var(--text-dim); }
+
+        .actions { display: flex; gap: 8px; }
+        .del-btn { background: rgba(239, 68, 68, 0.1); color: var(--danger); padding: 8px; border-radius: 10px; border: 1px solid var(--danger); font-size: 11px; }
+        .del-btn:hover { background: var(--danger); color: white; }
+
+        .empty-msg { text-align: center; color: var(--text-dim); font-size: 13px; padding: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>أرشيفك الخاص 📼</h2>
+    <h2>أرشيفك الذكي 📼</h2>
     
-    <input type="text" id="urlInput" placeholder="ضع رابط الفيديو هنا...">
+    <div class="input-group">
+        <input type="text" id="urlInput" placeholder="أدخل رابط فيديو مباشر (MP4)...">
+    </div>
     
     <div class="btns">
-        <button class="btn-url" onclick="handleUrl()">حفظ وتشغيل</button>
-        <button class="btn-file" onclick="document.getElementById('fInput').click()">📁 ارفع ملفك</button>
+        <button class="btn-url" onclick="handleUrl()">🚀 حفظ وتشغيل</button>
+        <button class="btn-file" onclick="document.getElementById('fInput').click()">📁 رفع ملف</button>
     </div>
 
     <input type="file" id="fInput" hidden accept="video/*" onchange="handleFileUpload(event)">
 
     <div id="loader" class="loader">
-        <span id="status" style="font-size:12px;">جاري المعالجة...</span>
+        <div style="display:flex; justify-content:space-between; font-size:12px;">
+            <span id="status">جاري المعالجة...</span>
+            <span id="percent">0%</span>
+        </div>
         <div class="bar"><div id="fill" class="fill"></div></div>
     </div>
 
     <div id="videoBox"></div>
 
-    <div class="section-title">🌍 أرشيف الشبكة (فارغ حالياً)</div>
-    <div id="publicList"></div>
+    <div class="section-header">
+        <span class="section-title">📂 مكتبتك المحفوظة</span>
+        <span id="count" style="font-size: 12px; color: var(--text-dim);">0 فيديوهات</span>
+    </div>
 
-    <div class="section-title">🔒 مكتبتك المحفوظة (أوفلاين)</div>
-    <div id="list"></div>
+    <input type="text" class="search-bar" id="searchInput" placeholder="بحث في عناوين الفيديوهات..." oninput="renderLibrary()">
+
+    <div id="list" class="list-container"></div>
 </div>
 
 <script>
-    // --- الأرشيف العام (فارغ حالياً كما طلبت) ---
-    const publicPlaylist = [];
-
-    const dbName = "MegaArchiveDB_V2";
+    const dbName = "SmartArchiveDB";
     let db;
+    let currentVideoUrl = null;
 
-    const req = indexedDB.open(dbName, 1);
-    req.onupgradeneeded = (e) => { e.target.result.createObjectStore("files", { keyPath: "id" }); };
+    // تهيئة قاعدة البيانات
+    const req = indexedDB.open(dbName, 2);
+    req.onupgradeneeded = (e) => {
+        const store = e.target.result.createObjectStore("files", { keyPath: "id" });
+        store.createIndex("date", "date");
+    };
     req.onsuccess = (e) => { 
         db = e.target.result; 
-        renderPublicPlaylist();
         renderLibrary(); 
     };
 
-    function renderPublicPlaylist() {
-        const pList = document.getElementById('publicList');
-        if (publicPlaylist.length === 0) {
-            pList.innerHTML = '<p style="color:#475569; font-size:12px; text-align:center;">لا توجد فيديوهات عامة مضافة.</p>';
-            return;
-        }
-        pList.innerHTML = '';
-        publicPlaylist.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'item';
-            div.innerHTML = `<span>📺 ${item.name}</span>`;
-            div.onclick = () => { document.getElementById('urlInput').value = item.url; handleUrl(); };
-            pList.appendChild(div);
-        });
-    }
-
+    // معالجة الرابط
     async function handleUrl() {
         const url = document.getElementById('urlInput').value.trim();
         if (!url) return;
-        const check = await getFromDB(url);
-        if (check) { play(check.blob); return; }
-        showLoader(true, "جاري التحميل...");
+
+        const existing = await getFromDB(url);
+        if (existing) { play(existing.blob); return; }
+
+        showLoader(true, "جاري جلب البيانات...");
         try {
             const res = await fetch(url);
+            if (!res.ok) throw new Error();
+            
             const reader = res.body.getReader();
             const total = +res.headers.get('content-length') || 0;
             let loaded = 0, chunks = [];
+
             while(true) {
                 const {done, value} = await reader.read();
                 if (done) break;
@@ -135,26 +178,43 @@
                 loaded += value.length;
                 if(total) updateProgress(Math.round((loaded/total)*100));
             }
+
             const blob = new Blob(chunks);
-            await saveToDB(url, blob, "رابط");
+            const fileName = url.split('/').pop().split('?')[0] || "فيديو خارجي";
+            await saveToDB(url, blob, fileName, "رابط", total);
             play(blob);
-        } catch(e) { alert("تأكد أن الرابط مباشر ويسمح بالتحميل."); }
+        } catch(e) {
+            alert("فشل التحميل. تأكد أن الرابط مباشر ويدعم الوصول العام (CORS).");
+        }
         showLoader(false);
     }
 
+    // معالجة رفع الملف
     async function handleFileUpload(e) {
         const file = e.target.files[0];
         if (!file) return;
-        showLoader(true, "جاري النسخ للمتصفح...");
-        await saveToDB(file.name, file, "محلي");
+
+        showLoader(true, "جاري الحفظ محلياً...");
+        updateProgress(50);
+        await saveToDB(file.name + Date.now(), file, file.name, "محلي", file.size);
         updateProgress(100);
-        setTimeout(() => { showLoader(false); play(file); renderLibrary(); }, 500);
+        
+        setTimeout(() => { 
+            showLoader(false); 
+            play(file); 
+            renderLibrary(); 
+        }, 400);
     }
 
-    function saveToDB(id, blob, type) {
+    // التفاعل مع IndexedDB
+    function saveToDB(id, blob, name, type, size) {
         return new Promise(res => {
             const tx = db.transaction("files", "readwrite");
-            tx.objectStore("files").put({ id, blob, type });
+            tx.objectStore("files").put({ 
+                id, blob, name, type, 
+                size: (size / (1024*1024)).toFixed(2) + " MB",
+                date: new Date().toLocaleDateString('ar-SA')
+            });
             tx.oncomplete = () => { renderLibrary(); res(); };
         });
     }
@@ -166,32 +226,54 @@
         });
     }
 
+    // عرض القائمة
     function renderLibrary() {
         const list = document.getElementById('list');
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        
         db.transaction("files", "readonly").objectStore("files").getAll().onsuccess = (e) => {
-            const items = e.target.result;
-            list.innerHTML = items.length ? '' : '<p style="color:#475569; font-size:12px; text-align:center;">المكتبة فارغة</p>';
-            items.forEach(item => {
+            const items = e.target.result.filter(i => i.name.toLowerCase().includes(searchTerm));
+            document.getElementById('count').innerText = `${items.length} فيديوهات`;
+            
+            list.innerHTML = items.length ? '' : '<div class="empty-msg">لا توجد نتائج مطابقة</div>';
+            
+            items.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'item';
-                div.innerHTML = `<span>📂 ${item.id}</span> <button class="del-btn" onclick="deleteItem('${item.id}')">حذف</button>`;
-                div.onclick = (ev) => { if(ev.target.tagName !== 'BUTTON') play(item.blob); };
+                div.innerHTML = `
+                    <div class="item-info">
+                        <span class="item-name">🎬 ${item.name}</span>
+                        <span class="item-meta">${item.date} • ${item.size}</span>
+                    </div>
+                    <div class="actions">
+                        <button class="del-btn" onclick="deleteItem('${item.id}')">حذف</button>
+                    </div>
+                `;
+                div.querySelector('.item-info').onclick = () => play(item.blob);
                 list.appendChild(div);
             });
         };
     }
 
     function deleteItem(id) {
-        if(confirm("حذف الفيديو؟")) {
+        if(confirm("هل أنت متأكد من حذف هذا الفيديو نهائياً؟")) {
             const tx = db.transaction("files", "readwrite");
             tx.objectStore("files").delete(id);
-            tx.oncomplete = () => renderLibrary();
+            tx.oncomplete = () => {
+                renderLibrary();
+                if (document.getElementById('videoBox').style.display === 'block') {
+                    document.getElementById('videoBox').style.display = 'none';
+                }
+            };
         }
     }
 
     function play(blob) {
+        if (currentVideoUrl) URL.revokeObjectURL(currentVideoUrl);
+        currentVideoUrl = URL.createObjectURL(blob);
+        
         const box = document.getElementById('videoBox');
-        box.innerHTML = `<video controls autoplay playsinline><source src="${URL.createObjectURL(blob)}"></video>`;
+        box.innerHTML = `<video controls autoplay playsinline><source src="${currentVideoUrl}"></video>`;
         box.style.display = 'block';
         box.scrollIntoView({behavior: 'smooth'});
     }
@@ -199,9 +281,13 @@
     function showLoader(show, msg = "") {
         document.getElementById('loader').style.display = show ? 'block' : 'none';
         document.getElementById('status').innerText = msg;
+        if(!show) updateProgress(0);
     }
 
-    function updateProgress(p) { document.getElementById('fill').style.width = p + '%'; }
+    function updateProgress(p) { 
+        document.getElementById('fill').style.width = p + '%'; 
+        document.getElementById('percent').innerText = p + '%';
+    }
 </script>
 </body>
 </html>
