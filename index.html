@@ -3,176 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مشغل الفيديو الهادئ</title>
+    <title>مشغل الفيديو الداكن</title>
     <style>
-        /* إعدادات الخط والألوان الهادئة */
+        /* ألوان الوضع الداكن */
         :root {
-            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            --accent-color: #5a67d8;
-            --text-main: #2d3748;
-            --glass-bg: rgba(255, 255, 255, 0.9);
+            --bg-color: #0f172a; /* أسود مزرق عميق */
+            --card-bg: #1e293b; /* رمادي داكن للبطاقة */
+            --accent-color: #818cf8; /* بنفسجي فاتح مريح */
+            --text-main: #f1f5f9;
+            --text-dim: #94a3b8;
+            --input-bg: #334155;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: var(--bg-gradient);
+            background-color: var(--bg-color);
+            color: var(--text-main);
             min-height: 100vh;
             margin: 0;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
-            padding-top: 40px;
+            padding: 20px 0;
         }
 
         .container {
             width: 92%;
             max-width: 500px;
-            background: var(--glass-bg);
+            background: var(--card-bg);
             padding: 25px;
             border-radius: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
         }
 
-        h2 {
-            color: var(--text-main);
-            font-size: 1.4rem;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
+        h2 { text-align: center; margin-bottom: 20px; font-weight: 700; color: var(--accent-color); }
+        h3 { font-size: 1rem; margin-top: 30px; border-top: 1px solid #334155; padding-top: 20px; color: var(--text-dim); }
 
-        /* تنسيق خانة الإدخال للجوال */
-        .input-wrapper {
-            position: relative;
-            margin-bottom: 15px;
-        }
+        .input-wrapper { margin-bottom: 15px; }
 
         input {
             width: 100%;
             padding: 16px;
-            border: 1.5px solid #e2e8f0;
+            border: 2px solid transparent;
             border-radius: 16px;
             font-size: 15px;
             outline: none;
             box-sizing: border-box;
-            background: #fff;
-            transition: all 0.3s ease;
-            -webkit-appearance: none; /* إزالة تنسيق ايفون الافتراضي */
+            background: var(--input-bg);
+            color: white;
+            transition: 0.3s;
         }
 
-        input:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 4px rgba(90, 103, 216, 0.1);
-        }
+        input:focus { border-color: var(--accent-color); }
 
-        /* زر التشغيل بشكل جذاب */
-        button {
+        button.main-btn {
             width: 100%;
             padding: 16px;
             background: var(--accent-color);
-            color: white;
+            color: #0f172a;
             border: none;
             border-radius: 16px;
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
-            transition: transform 0.2s active;
-            box-shadow: 0 4px 12px rgba(90, 103, 216, 0.2);
+            transition: 0.2s;
         }
 
-        button:active {
-            transform: scale(0.98);
-            background: #4c51bf;
-        }
+        button.main-btn:active { transform: scale(0.97); opacity: 0.9; }
 
-        /* منطقة الفيديو */
         #videoPreview {
-            margin-top: 25px;
+            margin-top: 20px;
             display: none;
             width: 100%;
             border-radius: 18px;
             overflow: hidden;
             background: #000;
-            line-height: 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        video, iframe {
-            width: 100%;
-            aspect-ratio: 16 / 9;
+        video, iframe { width: 100%; aspect-ratio: 16 / 9; border: none; }
+
+        /* قائمة السجل الداكنة */
+        .history-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: var(--input-bg);
+            padding: 14px;
+            border-radius: 14px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .history-item:hover { background: #475569; }
+
+        .history-item span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 85%;
+            color: var(--text-main);
+        }
+
+        .clear-btn {
+            background: none;
+            color: #f87171;
+            font-size: 12px;
             border: none;
-        }
-
-        .status-msg {
-            margin-top: 12px;
-            font-size: 14px;
-            color: #718096;
-            min-height: 20px;
+            cursor: pointer;
+            float: left;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>مشاهدة الفيديو</h2>
+    <h2>مشغل الفيديو الذكي</h2>
     
     <div class="input-wrapper">
-        <input type="text" id="videoUrl" placeholder="إلصق الرابط هنا..." enterkeyhint="go">
+        <input type="text" id="videoUrl" placeholder="إلصق رابط الفيديو هنا...">
     </div>
 
-    <button onclick="playVideo()">بدء العرض</button>
-
-    <div id="status" class="status-msg"></div>
+    <button class="main-btn" onclick="processVideo()">شغل الفيديو الآن</button>
 
     <div id="videoPreview"></div>
+
+    <h3>السجل الأخير
+        <button class="clear-btn" onclick="clearHistory()">مسح الكل</button>
+    </h3>
+    <div id="historyContainer" class="history-list"></div>
 </div>
 
 <script>
-    function playVideo() {
+    window.onload = displayHistory;
+
+    function processVideo() {
         const url = document.getElementById('videoUrl').value.trim();
+        if (!url) return;
+        playVideo(url);
+        saveToHistory(url);
+    }
+
+    function playVideo(url) {
         const preview = document.getElementById('videoPreview');
-        const status = document.getElementById('status');
-        
-        preview.style.display = 'none';
         preview.innerHTML = '';
-        status.innerText = "جاري التحقق...";
-
-        if (!url) {
-            status.innerText = "⚠️ من فضلك ضع الرابط أولاً";
-            status.style.color = "#e53e3e";
-            return;
-        }
-
-        // التعرف على اليوتيوب
-        const ytRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([^\s&?]+)/;
-        const ytMatch = url.match(ytRegex);
-
-        // التعرف على روابط الفيديو المباشرة بجميع الصيغ
-        const videoRegex = /\.(mp4|mkv|webm|mov|m4v|avi)/i;
-        const isDirect = videoRegex.test(url);
+        
+        const ytMatch = url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([^\s&?]+)/);
+        const isDirect = /\.(mp4|mkv|webm|mov|m4v|avi)/i.test(url);
 
         if (ytMatch) {
-            const id = ytMatch[1];
-            preview.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" allowfullscreen allow="autoplay"></iframe>`;
-            showResult("✅ تم العثور على فيديو يوتيوب");
-        } 
-        else if (isDirect) {
-            preview.innerHTML = `
-                <video controls autoplay playsinline>
-                    <source src="${url}" type="video/mp4">
-                    <source src="${url}" type="video/webm">
-                    متصفحك لا يدعم التشغيل.
-                </video>`;
-            showResult("✅ جاري تشغيل ملف الفيديو");
-        } 
-        else {
-            status.innerText = "❌ الرابط غير مدعوم للمعاينة";
-            status.style.color = "#e53e3e";
+            preview.innerHTML = `<iframe src="https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1" allowfullscreen allow="autoplay"></iframe>`;
+        } else if (isDirect) {
+            preview.innerHTML = `<video controls autoplay playsinline><source src="${url}"></video>`;
+        } else {
+            alert("⚠️ الرابط غير مدعوم أو الصيغة غير صحيحة");
+            return;
         }
+        preview.style.display = 'block';
+        // سكرول تلقائي للفيديو عند التشغيل في الجوال
+        preview.scrollIntoView({ behavior: 'smooth' });
+    }
 
-        function showResult(msg) {
-            status.innerText = msg;
-            status.style.color = "#38a169";
-            preview.style.display = 'block';
+    function saveToHistory(url) {
+        let history = JSON.parse(localStorage.getItem('videoHistory') || '[]');
+        history = history.filter(item => item !== url);
+        history.unshift(url);
+        if (history.length > 15) history.pop();
+        localStorage.setItem('videoHistory', JSON.stringify(history));
+        displayHistory();
+    }
+
+    function displayHistory() {
+        const container = document.getElementById('historyContainer');
+        const history = JSON.parse(localStorage.getItem('videoHistory') || '[]');
+        container.innerHTML = history.length === 0 ? '<p style="color:var(--text-dim); font-size:13px; text-align:center;">السجل فارغ</p>' : '';
+        
+        history.forEach(url => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.innerHTML = `<span>${url}</span> ⚡`;
+            div.onclick = () => {
+                document.getElementById('videoUrl').value = url;
+                playVideo(url);
+            };
+            container.appendChild(div);
+        });
+    }
+
+    function clearHistory() {
+        if(confirm("هل تريد مسح السجل؟")) {
+            localStorage.removeItem('videoHistory');
+            displayHistory();
         }
     }
 </script>
