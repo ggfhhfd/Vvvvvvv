@@ -3,85 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مشغل الفيديو - سبيستون</title>
+    <title>مشغل الفيديو أوفلاين</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background-color: #f0f2f5; padding: 20px; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        video { width: 100%; border-radius: 10px; display: none; margin-top: 20px; background: #000; }
-        .btn { background-color: #28a745; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; width: 100%; font-size: 18px; font-weight: bold; }
-        .btn:disabled { background-color: #ccc; }
-        #status { margin-top: 15px; color: #555; font-size: 14px; line-height: 1.6; }
-        .loader { width: 100%; height: 8px; background: #eee; border-radius: 4px; display: none; margin-top: 10px; overflow: hidden; }
-        #progress { width: 0%; height: 100%; background: #007bff; transition: 0.3s; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f4; }
+        video { width: 100%; max-width: 600px; border-radius: 10px; background: #000; }
+        #status { margin: 20px; color: #555; }
+        button { padding: 15px 25px; font-size: 16px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 5px; }
+        button:disabled { background: #ccc; }
+        .progress-bar { width: 100%; max-width: 600px; height: 10px; background: #ddd; margin: 10px auto; display: none; }
+        #progress { height: 100%; background: #007bff; width: 0%; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>ذكريات سبيستون 📺</h2>
-    <p>اضغط الزر للتحميل، وبعدها تقدر تشوفه بدون نت نهائياً.</p>
+    <h2>مشغل الفيديو الذكي (بدون نت)</h2>
     
-    <button id="dlBtn" class="btn">📥 ابدأ تحميل الفيديو</button>
-    <div class="loader" id="loader"><div id="progress"></div></div>
-    <p id="status">جاهز للتحميل...</p>
+    <video id="videoPlayer" controls poster="https://via.placeholder.com/600x340?text=Video+Player"></video>
+    
+    <div id="status">الفيديو غير محمل في الذاكرة.</div>
+    
+    <div class="progress-bar" id="progressBar"><div id="progress"></div></div>
+    
+    <button id="downloadBtn">تحميل الفيديو للمشاهدة بدون إنترنت</button>
 
-    <video id="player" controls playsinline></video>
-</div>
+    <script>
+        const VIDEO_URL = 'رابط_الفيديو_هنا.mp4'; // ضع رابط الفيديو المباشر هنا
+        const DB_NAME = "VideoStore";
+        const STORE_NAME = "videos";
+        let db;
 
-<script>
-    // الرابط مع بروكسي لفك الحماية
-    const ORIGIN_URL = "https://abra--5e4bd524.api.cosmic-crab.buzz/b98e33291feff0d904d03c937e7c922a96983a5a/Old%20Cartoon%20Mix%20Part%205/%D8%B7%D9%85%20%D8%B7%D9%85/E01.mp4?api-key=8acbcf1e-732c-4574-a3bf-27e6a85b86f1&download=true&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjgxNTkwNjUsInJhdGUiOiI1TSIsInJvbGUiOiJmcmVlIiwic2Vzc2lvbklEIjoiTVRjMk5qTXpORGMxTW54T2QzZEJUa1pzVUZORk5VUlJWbWhZVlZVMVVGTlZiRk5VVm1kNVYxWnNVMVpGUmtWU1JWRXdUVEE1V0ZacVVrbE5hazVLVTBVMVNGTlZNVWRXYTNoaFRXc3hSVlpFV2tkTk1FVTlmUFhVQTl0VjJsOURkcEh0RGEzVjJoTlM1N1lzV3Rfd0s2VW5sUGl6N2tOUyIsImRvbWFpbiI6IndlYnRvci5pbyIsImFnZW50IjoiTW96aWxsYS81LjAgKE1hY2ludG9zaDsgSW50ZWwgTWFjIE9TIFggMTBfMTVfNykgQXBwbGVXZWJLaXQvNjA1LjEuMTUgKEtIVE1MLCBsaWtlIEdlY2tvKSBWZXJzaW9uLzE2LjYuMSBTYWZhcmkvNjA1LjEuMTUiLCJyZW1vdGVBZGRyZXNzIjoiMjAwMToxNmE0OjJlNzphZjk1OjZkOTQ6ZDE2Nzo0OWE6NWJhNSJ9.Q2DF8i-RnXFFZCoymS9vijB_B7MDPcXwXEAXgK8x-fI";
-    const PROXY_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(ORIGIN_URL);
+        // 1. فتح قاعدة البيانات
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onupgradeneeded = e => {
+            e.target.result.createObjectStore(STORE_NAME);
+        };
+        request.onsuccess = e => {
+            db = e.target.result;
+            checkIfVideoExists();
+        };
 
-    const dlBtn = document.getElementById('dlBtn');
-    const player = document.getElementById('player');
-    const status = document.getElementById('status');
-    const loader = document.getElementById('loader');
-    const progress = document.getElementById('progress');
+        // 2. التحقق هل الفيديو موجود مسبقاً؟
+        function checkIfVideoExists() {
+            const transaction = db.transaction([STORE_NAME], "readonly");
+            const getRequest = transaction.objectStore(STORE_NAME).get("mainVideo");
+            getRequest.onsuccess = () => {
+                if (getRequest.result) {
+                    displayVideo(getRequest.result);
+                    document.getElementById('status').innerText = "✅ الفيديو محمل وجاهز للمشاهدة بدون نت.";
+                    document.getElementById('downloadBtn').innerText = "تحديث الفيديو (تحميل مرة أخرى)";
+                }
+            };
+        }
 
-    let db;
-    const req = indexedDB.open("VideoStore", 1);
-    req.onupgradeneeded = e => e.target.result.createObjectStore("files");
-    req.onsuccess = e => {
-        db = e.target.result;
-        checkSaved();
-    };
+        // 3. تحميل الفيديو وحفظه
+        document.getElementById('downloadBtn').onclick = async () => {
+            const btn = document.getElementById('downloadBtn');
+            const progressDiv = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progress');
+            
+            btn.disabled = true;
+            progressDiv.style.display = 'block';
+            document.getElementById('status').innerText = "جاري التحميل... يرجى عدم إغلاق الصفحة";
 
-    function checkSaved() {
-        const tx = db.transaction("files", "readonly");
-        const store = tx.objectStore("files").get("konan");
-        store.onsuccess = () => {
-            if (store.result) {
-                const url = URL.createObjectURL(store.result);
-                player.src = url;
-                player.style.display = 'block';
-                status.innerHTML = "✅ الفيديو محفوظ الآن في هاتفك.<br>جرب طفي النت وشغل الصفحة!";
-                dlBtn.style.display = 'none';
+            try {
+                const response = await fetch(VIDEO_URL);
+                const reader = response.body.getReader();
+                const contentLength = +response.headers.get('Content-Length');
+                
+                let receivedLength = 0;
+                let chunks = []; 
+                
+                while(true) {
+                    const {done, value} = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    receivedLength += value.length;
+                    let step = (receivedLength / contentLength) * 100;
+                    progressFill.style.width = step + '%';
+                }
+
+                const blob = new Blob(chunks);
+                const transaction = db.transaction([STORE_NAME], "readwrite");
+                transaction.objectStore(STORE_NAME).put(blob, "mainVideo");
+
+                transaction.oncomplete = () => {
+                    displayVideo(blob);
+                    document.getElementById('status').innerText = "✅ تم الحفظ! جرب الآن إغلاق النت وتحديث الصفحة.";
+                    btn.disabled = false;
+                };
+            } catch (error) {
+                alert("خطأ في التحميل: تأكد من الرابط أو اتصالك.");
+                btn.disabled = false;
             }
         };
-    }
 
-    dlBtn.onclick = async () => {
-        dlBtn.disabled = true;
-        status.innerText = "جاري كسر الحماية وتحميل الفيديو... انتظر قليلاً";
-        loader.style.display = 'block';
-
-        try {
-            const response = await fetch(PROXY_URL);
-            if (!response.ok) throw new Error();
-            
-            const blob = await response.blob();
-            const tx = db.transaction("files", "readwrite");
-            tx.objectStore("files").put(blob, "konan");
-            
-            tx.oncomplete = () => {
-                location.reload();
-            };
-        } catch (err) {
-            status.innerText = "فشل التحميل. الرابط قديم أو السيرفر محمي جداً. حاول مرة أخرى.";
-            dlBtn.disabled = false;
+        // 4. عرض الفيديو من الذاكرة
+        function displayVideo(blob) {
+            const videoUrl = URL.createObjectURL(blob);
+            document.getElementById('videoPlayer').src = videoUrl;
         }
-    };
-</script>
+    </script>
 </body>
 </html>
