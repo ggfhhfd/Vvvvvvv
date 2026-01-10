@@ -3,39 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClashData - رفع الفيديوهات</title>
+    <title>ClashData - إدارة الفيديوهات</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .upload-container { background: #1e1e1e; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 90%; max-width: 400px; text-align: center; }
-        h2 { color: #ff4757; margin-bottom: 20px; }
-        input[type="file"] { background: #2d2d2d; border: 1px dashed #555; padding: 15px; border-radius: 10px; width: 100%; box-sizing: border-box; cursor: pointer; color: #ccc; margin-bottom: 20px; }
-        button { background: linear-gradient(45deg, #ff4757, #ff6b81); color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: white; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .upload-container { background: #1e1e1e; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 450px; text-align: center; margin-bottom: 20px; }
+        h2, h3 { color: #ff4757; margin-bottom: 15px; }
+        input[type="file"] { background: #2d2d2d; border: 1px dashed #555; padding: 15px; border-radius: 10px; width: 100%; box-sizing: border-box; cursor: pointer; color: #ccc; margin-bottom: 15px; }
+        button#uploadBtn { background: linear-gradient(45deg, #ff4757, #ff6b81); color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .progress-area { margin: 20px 0; display: none; }
+        .progress-area { margin: 15px 0; display: none; }
         .bar { background: #333; height: 10px; border-radius: 5px; overflow: hidden; }
         .fill { background: #2ed573; width: 0%; height: 100%; transition: 0.2s; }
         #status { font-size: 14px; margin-top: 10px; color: #eccc68; }
+        
+        /* تنسيق قائمة الفيديوهات */
+        .video-item { background: #262626; padding: 15px; border-radius: 15px; margin-bottom: 20px; width: 100%; max-width: 450px; border: 1px solid #333; position: relative; }
+        video { width: 100%; border-radius: 10px; margin-top: 10px; background: #000; }
+        .delete-btn { background: rgba(255, 71, 87, 0.2); color: #ff4757; border: 1px solid #ff4757; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; float: left; transition: 0.3s; }
+        .delete-btn:hover { background: #ff4757; color: white; }
+        .video-title { font-size: 14px; color: #eee; font-weight: bold; display: block; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
-<div class="upload-container">
-    <h2>🚀 ClashData</h2>
-    <input type="file" id="videoFile" accept="video/*">
-    
-    <div class="progress-area" id="progressArea">
-        <div class="bar"><div class="fill" id="progressFill"></div></div>
-        <p id="status">جاهز للرفع...</p>
+    <div class="upload-container">
+        <h2>🚀 ClashData</h2>
+        <input type="file" id="videoFile" accept="video/*">
+        
+        <div class="progress-area" id="progressArea">
+            <div class="bar"><div class="fill" id="progressFill"></div></div>
+            <p id="status">جاهز للرفع...</p>
+        </div>
+
+        <button id="uploadBtn" onclick="startUploadProcess()">ابدأ الرفع الآن</button>
     </div>
 
-    <button id="uploadBtn" onclick="startUploadProcess()">ابدأ الرفع الآن</button>
-</div>
+    <h3 style="margin-top: 20px;">📺 الفيديوهات المرفوعة</h3>
+    <div id="videoList" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // بيانات Firebase الخاصة بك
     const firebaseConfig = {
         apiKey: "AIzaSyAm1OfTW_qS4lhSGlqgDd6fiLDj3u93wqI",
         authDomain: "clashdata-8424c.firebaseapp.com",
@@ -47,11 +57,10 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-
-    // بيانات Cloudinary من صورك
     const CLOUD_NAME = "dkpddgzqj";
-    const UPLOAD_PRESET = "b2aumssr"; 
+    const UPLOAD_PRESET = "b2aumssr";
 
+    // دالة الرفع
     window.startUploadProcess = async function() {
         const fileInput = document.getElementById('videoFile');
         const file = fileInput.files[0];
@@ -60,61 +69,69 @@
         const progressArea = document.getElementById('progressArea');
         const progressFill = document.getElementById('progressFill');
 
-        if (!file) {
-            alert("أرجوك اختر فيديو أولاً!");
-            return;
-        }
+        if (!file) return alert("اختر فيديو!");
 
         btn.disabled = true;
         progressArea.style.display = 'block';
-        status.innerText = "جاري الاتصال بالسيرفر...";
 
-        // تجهيز البيانات للإرسال لـ Cloudinary
         const formData = new FormData();
         formData.append('file', file);
         formData.append('upload_preset', UPLOAD_PRESET);
 
-        // استخدام XMLHttpRequest لمتابعة التقدم بدقة
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`, true);
 
         xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-                const percent = (e.loaded / e.total) * 100;
-                progressFill.style.width = percent + '%';
-                status.innerText = `تم رفع: ${Math.round(percent)}%`;
-            }
+            const percent = (e.loaded / e.total) * 100;
+            progressFill.style.width = percent + '%';
+            status.innerText = `تم رفع: ${Math.round(percent)}%`;
         };
 
         xhr.onload = function() {
             const data = JSON.parse(xhr.responseText);
             if (data.secure_url) {
-                // خطوة حفظ الرابط في Firebase
                 const videoRef = ref(db, 'my_videos');
-                const newVideoEntry = push(videoRef);
-                
-                set(newVideoEntry, {
+                push(videoRef, {
                     name: file.name,
                     url: data.secure_url,
-                    type: "video",
                     date: new Date().toISOString()
                 }).then(() => {
-                    status.innerText = "تم الرفع والحفظ بنجاح! ✅";
+                    status.innerText = "تم بنجاح! ✅";
                     btn.disabled = false;
                     fileInput.value = "";
                 });
-            } else {
-                status.innerText = "فشل الرفع، تأكد من الإعدادات.";
-                btn.disabled = false;
             }
         };
-
-        xhr.onerror = () => {
-            status.innerText = "حدث خطأ في الاتصال.";
-            btn.disabled = false;
-        };
-
         xhr.send(formData);
+    };
+
+    // دالة عرض الفيديوهات والحذف
+    const videoListDiv = document.getElementById('videoList');
+    onValue(ref(db, 'my_videos'), (snapshot) => {
+        videoListDiv.innerHTML = "";
+        const data = snapshot.val();
+        if (data) {
+            Object.keys(data).reverse().forEach(key => {
+                const video = data[key];
+                const item = document.createElement('div');
+                item.className = 'video-item';
+                item.innerHTML = `
+                    <button class="delete-btn" onclick="deleteVideo('${key}')">حذف 🗑️</button>
+                    <span class="video-title">${video.name}</span>
+                    <video controls src="${video.url}"></video>
+                `;
+                videoListDiv.appendChild(item);
+            });
+        } else {
+            videoListDiv.innerHTML = "<p style='color:#666;'>لا توجد فيديوهات حالياً.</p>";
+        }
+    });
+
+    // دالة الحذف
+    window.deleteVideo = function(id) {
+        if(confirm("هل أنت متأكد من حذف هذا الفيديو؟")) {
+            remove(ref(db, `my_videos/${id}`));
+        }
     };
 </script>
 
