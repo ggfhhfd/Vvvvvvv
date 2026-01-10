@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مشغل الفيديو الذكي - التخزين الدائم</title>
+    <title>مستودع الفيديوهات الدائم</title>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --accent-color: #818cf8;
-            --success-color: #10b981;
-            --text-main: #f1f5f9;
-            --input-bg: #334155;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #818cf8;
+            --safe: #10b981;
+            --danger: #ef4444;
+            --text: #f1f5f9;
         }
 
         body {
-            font-family: -apple-system, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             margin: 0;
             display: flex;
             justify-content: center;
@@ -27,143 +27,136 @@
         .container {
             width: 92%;
             max-width: 500px;
-            background: var(--card-bg);
+            background: var(--card);
             padding: 25px;
             border-radius: 24px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
         }
 
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+
         input {
-            width: 100%;
-            padding: 16px;
-            border: 2px solid transparent;
-            border-radius: 16px;
-            background: var(--input-bg);
+            flex: 1;
+            padding: 15px;
+            border-radius: 14px;
+            border: 2px solid #334155;
+            background: #0f172a;
             color: white;
-            margin-bottom: 15px;
-            box-sizing: border-box;
             outline: none;
         }
 
-        button.main-btn {
-            width: 100%;
-            padding: 16px;
-            background: var(--accent-color);
-            color: white;
+        input:focus { border-color: var(--accent); }
+
+        button {
+            padding: 12px 20px;
+            border-radius: 12px;
             border: none;
-            border-radius: 16px;
-            font-weight: 700;
+            font-weight: bold;
             cursor: pointer;
+            transition: 0.2s;
         }
 
-        /* شريط التحميل */
-        #loaderContainer {
-            display: none;
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #334155;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 10px;
-        }
-
-        #progressFill {
-            width: 0%;
-            height: 100%;
-            background: var(--success-color);
-            transition: width 0.3s;
-        }
+        .btn-play { background: var(--accent); color: white; width: 100%; margin-bottom: 15px; height: 55px; font-size: 16px; }
 
         #videoPreview {
-            margin-top: 20px;
             display: none;
             width: 100%;
-            border-radius: 18px;
+            border-radius: 16px;
             overflow: hidden;
             background: #000;
+            margin-bottom: 20px;
         }
 
-        video { width: 100%; aspect-ratio: 16 / 9; }
+        video { width: 100%; display: block; }
 
-        .status-badge {
-            font-size: 12px;
-            padding: 4px 8px;
-            border-radius: 6px;
+        /* شريط التحميل */
+        .loader { display: none; text-align: center; margin-bottom: 20px; }
+        .bar { width: 100%; height: 8px; background: #334155; border-radius: 10px; overflow: hidden; margin-top: 10px; }
+        .fill { width: 0%; height: 100%; background: var(--safe); transition: width 0.2s; }
+
+        /* قائمة التخزين */
+        .storage-list { margin-top: 25px; border-top: 1px solid #334155; padding-top: 15px; }
+        .item {
             background: #334155;
-            margin-top: 10px;
-            display: inline-block;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
         }
+        .item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; color: var(--safe); }
+        .del-btn { background: var(--danger); color: white; padding: 5px 10px; font-size: 11px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="text-align:center;">المشغل الذكي (تخزين دائم)</h2>
+    <h2 style="text-align:center; margin-bottom:25px;">مستودع الفيديو الذكي</h2>
     
-    <input type="text" id="videoUrl" placeholder="أدخل رابط الفيديو المباشر...">
-    <button class="main-btn" onclick="handleAction()">تشغيل / تحميل</button>
+    <input type="text" id="videoUrl" placeholder="إلصق رابط الفيديو المباشر هنا...">
+    <div style="margin-top:10px;">
+        <button class="btn-play" onclick="handleLogic()">تشغيل / تحميل دائم</button>
+    </div>
 
-    <div id="loaderContainer">
-        <span id="loaderStatus">جاري الفحص...</span>
-        <div class="progress-bar"><div id="progressFill"></div></div>
+    <div id="loader" class="loader">
+        <span id="lStatus" style="font-size:13px;">جاري الفحص...</span>
+        <div class="bar"><div id="lFill" class="fill"></div></div>
     </div>
 
     <div id="videoPreview"></div>
-    <div id="storageStatus" class="status-badge">بانتظار الرابط...</div>
+
+    <div class="storage-list">
+        <h3 style="font-size:15px;">الفيديوهات المخزنة محلياً:</h3>
+        <div id="listItems"></div>
+    </div>
 </div>
 
 <script>
-    // 1. إعداد قاعدة بيانات المتصفح (IndexedDB)
-    const dbName = "VideoCacheDB";
+    // إعداد قاعدة البيانات الدائمة IndexedDB
+    const dbName = "VideoStoreDB";
     let db;
-    const request = indexedDB.open(dbName, 1);
 
+    const request = indexedDB.open(dbName, 1);
     request.onupgradeneeded = (e) => {
         db = e.target.result;
-        db.createObjectStore("videos", { keyPath: "url" });
+        db.createObjectStore("library", { keyPath: "id" });
     };
+    request.onsuccess = (e) => { db = e.target.result; refreshList(); };
 
-    request.onsuccess = (e) => { db = e.target.result; };
-
-    async function handleAction() {
+    async function handleLogic() {
         const url = document.getElementById('videoUrl').value.trim();
         if (!url) return;
 
-        // فحص هل الفيديو مخزن مسبقاً؟
-        const transaction = db.transaction(["videos"], "readonly");
-        const store = transaction.objectStore("videos");
-        const getRequest = store.get(url);
+        // 1. فحص هل هو موجود في المخزن؟
+        const tx = db.transaction("library", "readonly");
+        const store = tx.objectStore("library");
+        const check = store.get(url);
 
-        getRequest.onsuccess = async () => {
-            if (getRequest.result) {
-                // الفيديو موجود! شغله فوراً
-                document.getElementById('storageStatus').innerText = "✅ يتم التشغيل من ذاكرة الجوال (بدون إنترنت)";
-                playBlob(getRequest.result.blob);
+        check.onsuccess = () => {
+            if (check.result) {
+                playFromBlob(check.result.data);
             } else {
-                // الفيديو غير موجود، ابدأ التحميل والتخزين
-                downloadAndSave(url);
+                startPermanentDownload(url);
             }
         };
     }
 
-    async function downloadAndSave(url) {
-        const loader = document.getElementById('loaderContainer');
-        const progressFill = document.getElementById('progressFill');
-        const loaderStatus = document.getElementById('loaderStatus');
+    async function startPermanentDownload(url) {
+        const loader = document.getElementById('loader');
+        const fill = document.getElementById('lFill');
+        const status = document.getElementById('lStatus');
         
         loader.style.display = 'block';
         document.getElementById('videoPreview').style.display = 'none';
 
         try {
             const response = await fetch(url);
-            const contentLength = response.headers.get('content-length');
-            const reader = response.body.getReader();
+            if (!response.ok) throw new Error();
             
+            const reader = response.body.getReader();
+            const total = +response.headers.get('content-length');
             let loaded = 0;
             let chunks = [];
 
@@ -172,32 +165,62 @@
                 if (done) break;
                 chunks.push(value);
                 loaded += value.length;
-                const percent = Math.round((loaded / contentLength) * 100);
-                progressFill.style.width = percent + '%';
-                loaderStatus.innerText = `جاري التحميل لأول مرة: ${percent}%`;
+                const p = Math.round((loaded / total) * 100);
+                fill.style.width = p + '%';
+                status.innerText = `جاري التحميل للتخزين الدائم: ${p}%`;
             }
 
-            const blob = new Blob(chunks);
+            const finalBlob = new Blob(chunks);
             
-            // تخزين في قاعدة البيانات
-            const transaction = db.transaction(["videos"], "readwrite");
-            transaction.objectStore("videos").add({ url: url, blob: blob });
-
-            loader.style.display = 'none';
-            document.getElementById('storageStatus').innerText = "✅ تم الحفظ في المتصفح بنجاح";
-            playBlob(blob);
-
+            // حفظ في الذاكرة الدائمة
+            const saveTx = db.transaction("library", "readwrite");
+            saveTx.objectStore("library").add({ id: url, data: finalBlob, date: new Date().toLocaleString() });
+            
+            saveTx.oncomplete = () => {
+                loader.style.display = 'none';
+                refreshList();
+                playFromBlob(finalBlob);
+            };
         } catch (e) {
-            alert("فشل التحميل. تأكد أن الرابط مباشر.");
+            alert("خطأ: تأكد أن الرابط مباشر ويسمح بالتحميل.");
             loader.style.display = 'none';
         }
     }
 
-    function playBlob(blob) {
+    function playFromBlob(blob) {
         const preview = document.getElementById('videoPreview');
-        const blobUrl = URL.createObjectURL(blob);
-        preview.innerHTML = `<video controls autoplay playsinline><source src="${blobUrl}"></video>`;
+        const vUrl = URL.createObjectURL(blob);
+        preview.innerHTML = `<video controls autoplay playsinline><source src="${vUrl}"></video>`;
         preview.style.display = 'block';
+        preview.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function refreshList() {
+        const listItems = document.getElementById('listItems');
+        const tx = db.transaction("library", "readonly");
+        const store = tx.objectStore("library");
+        const getAll = store.getAll();
+
+        getAll.onsuccess = () => {
+            listItems.innerHTML = getAll.result.length === 0 ? '<p style="color:#64748b; font-size:12px;">لا يوجد فيديوهات محملة.</p>' : '';
+            getAll.result.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'item';
+                row.innerHTML = `
+                    <span onclick="document.getElementById('videoUrl').value='${item.id}'; handleLogic();">${item.id}</span>
+                    <button class="del-btn" onclick="deleteItem('${item.id}')">حذف</button>
+                `;
+                listItems.appendChild(row);
+            });
+        };
+    }
+
+    function deleteItem(id) {
+        if (confirm("حذف الفيديو من ذاكرة المتصفح؟")) {
+            const tx = db.transaction("library", "readwrite");
+            tx.objectStore("library").delete(id);
+            tx.oncomplete = () => refreshList();
+        }
     }
 </script>
 
