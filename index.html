@@ -2,160 +2,177 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مشغل الفيديو المطور</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مشغل الفيديو الهادئ</title>
     <style>
+        /* إعدادات الخط والألوان الهادئة */
         :root {
-            --primary-color: #2563eb;
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --accent-color: #5a67d8;
+            --text-main: #2d3748;
+            --glass-bg: rgba(255, 255, 255, 0.9);
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-gradient);
             min-height: 100vh;
             margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 40px;
         }
 
         .container {
-            background: var(--card-bg);
-            padding: 2.5rem;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            width: 90%;
-            max-width: 800px;
-            text-align: center;
+            width: 92%;
+            max-width: 500px;
+            background: var(--glass-bg);
+            padding: 25px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            backdrop-filter: blur(10px);
         }
 
-        h2 { color: #1e293b; margin-bottom: 1.5rem; font-size: 24px; }
+        h2 {
+            color: var(--text-main);
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
 
-        .input-box {
-            display: flex;
-            gap: 12px;
+        /* تنسيق خانة الإدخال للجوال */
+        .input-wrapper {
+            position: relative;
             margin-bottom: 15px;
         }
 
         input {
-            flex: 1;
-            padding: 14px 18px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 16px;
+            width: 100%;
+            padding: 16px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 15px;
             outline: none;
+            box-sizing: border-box;
+            background: #fff;
             transition: all 0.3s ease;
+            -webkit-appearance: none; /* إزالة تنسيق ايفون الافتراضي */
         }
 
         input:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 4px rgba(90, 103, 216, 0.1);
         }
 
+        /* زر التشغيل بشكل جذاب */
         button {
-            padding: 10px 30px;
-            background: var(--primary-color);
+            width: 100%;
+            padding: 16px;
+            background: var(--accent-color);
             color: white;
             border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: 600;
+            border-radius: 16px;
             font-size: 16px;
-            transition: 0.3s;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s active;
+            box-shadow: 0 4px 12px rgba(90, 103, 216, 0.2);
         }
 
-        button:hover { background: #1d4ed8; transform: translateY(-1px); }
+        button:active {
+            transform: scale(0.98);
+            background: #4c51bf;
+        }
 
+        /* منطقة الفيديو */
         #videoPreview {
             margin-top: 25px;
             display: none;
             width: 100%;
-            border-radius: 15px;
+            border-radius: 18px;
             overflow: hidden;
             background: #000;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            line-height: 0;
         }
 
         video, iframe {
             width: 100%;
             aspect-ratio: 16 / 9;
-            display: block;
             border: none;
         }
 
-        .status { 
-            margin-top: 15px; 
-            font-size: 15px; 
-            font-weight: 500;
-            min-height: 22px;
+        .status-msg {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #718096;
+            min-height: 20px;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>لصق رابط الفيديو</h2>
+    <h2>مشاهدة الفيديو</h2>
     
-    <div class="input-box">
-        <input type="text" id="videoUrl" placeholder="أدخل رابط الفيديو (MP4, MKV, YouTube...)">
-        <button onclick="handleVideo()">تشغيل</button>
+    <div class="input-wrapper">
+        <input type="text" id="videoUrl" placeholder="إلصق الرابط هنا..." enterkeyhint="go">
     </div>
 
-    <div id="status" class="status"></div>
+    <button onclick="playVideo()">بدء العرض</button>
+
+    <div id="status" class="status-msg"></div>
 
     <div id="videoPreview"></div>
 </div>
 
 <script>
-    function handleVideo() {
-        const urlInput = document.getElementById('videoUrl').value.trim();
+    function playVideo() {
+        const url = document.getElementById('videoUrl').value.trim();
         const preview = document.getElementById('videoPreview');
         const status = document.getElementById('status');
         
-        // تنظيف المحتوى السابق
-        preview.innerHTML = '';
         preview.style.display = 'none';
-        status.innerText = "";
+        preview.innerHTML = '';
+        status.innerText = "جاري التحقق...";
 
-        if (!urlInput) {
-            status.innerText = "⚠️ يرجى إدخال الرابط أولاً";
-            status.style.color = "#dc2626";
+        if (!url) {
+            status.innerText = "⚠️ من فضلك ضع الرابط أولاً";
+            status.style.color = "#e53e3e";
             return;
         }
 
-        // 1. فحص روابط يوتيوب
-        const youtubeMatch = urlInput.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([^\s&?]+)/);
-        
-        // 2. فحص روابط الفيديو المباشرة (حتى لو فيها Token أو معاملات أخرى)
-        const directVideoRegex = /\.(mp4|webm|ogg|mov|m4v|mkv)/i;
-        const isDirectVideo = directVideoRegex.test(urlInput);
+        // التعرف على اليوتيوب
+        const ytRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([^\s&?]+)/;
+        const ytMatch = url.match(ytRegex);
 
-        if (youtubeMatch) {
-            const videoId = youtubeMatch[1];
-            preview.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
-            showVideo("✅ تم تشغيل فيديو يوتيوب بنجاح");
+        // التعرف على روابط الفيديو المباشرة بجميع الصيغ
+        const videoRegex = /\.(mp4|mkv|webm|mov|m4v|avi)/i;
+        const isDirect = videoRegex.test(url);
+
+        if (ytMatch) {
+            const id = ytMatch[1];
+            preview.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" allowfullscreen allow="autoplay"></iframe>`;
+            showResult("✅ تم العثور على فيديو يوتيوب");
         } 
-        else if (isDirectVideo) {
-            // تشغيل الرابط المباشر في مشغل HTML5
+        else if (isDirect) {
             preview.innerHTML = `
-                <video controls autoplay>
-                    <source src="${urlInput}" type="video/mp4">
-                    <source src="${urlInput}" type="video/webm">
-                    عذراً، متصفحك لا يدعم تشغيل هذا الفيديو.
+                <video controls autoplay playsinline>
+                    <source src="${url}" type="video/mp4">
+                    <source src="${url}" type="video/webm">
+                    متصفحك لا يدعم التشغيل.
                 </video>`;
-            showVideo("✅ جاري تشغيل الفيديو من الرابط المباشر");
+            showResult("✅ جاري تشغيل ملف الفيديو");
         } 
         else {
-            status.innerText = "❌ عذراً، الصيغة غير مدعومة للمعاينة المباشرة.";
-            status.style.color = "#dc2626";
+            status.innerText = "❌ الرابط غير مدعوم للمعاينة";
+            status.style.color = "#e53e3e";
         }
 
-        function showVideo(msg) {
-            preview.style.display = 'block';
+        function showResult(msg) {
             status.innerText = msg;
-            status.style.color = "#059669";
+            status.style.color = "#38a169";
+            preview.style.display = 'block';
         }
     }
 </script>
