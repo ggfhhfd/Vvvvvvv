@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مشغل الفيديو الذكي (Offline)</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f9; }
+        #videoPlayer { width: 100%; max-width: 600px; border-radius: 10px; display: none; margin-top: 20px; }
+        .status { color: #555; margin: 10px; font-size: 0.9em; }
+        .upload-btn { background: #007bff; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h2>مشغل الفيديو أوفلاين</h2>
+    <p class="status" id="status">تحقق من وجود فيديو محفوظ...</p>
+
+    <input type="file" id="videoInput" accept="video/*" style="display:none">
+    <label for="videoInput" class="upload-btn">اختر فيديو لحفظه</label>
+
+    <br>
+    <video id="videoPlayer" controls></video>
+
+    <script>
+        const videoInput = document.getElementById('videoInput');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const status = document.getElementById('status');
+
+        // إنشاء أو فتح قاعدة البيانات في المتصفح
+        let db;
+        const request = indexedDB.open("VideoDB", 1);
+
+        request.onupgradeneeded = (e) => {
+            db = e.target.result;
+            db.createObjectStore("videos");
+        };
+
+        request.onsuccess = (e) => {
+            db = e.target.result;
+            loadVideoFromDB(); // محاولة تحميل الفيديو عند فتح الصفحة
+        };
+
+        // وظيفة حفظ الفيديو
+        videoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const transaction = db.transaction(["videos"], "readwrite");
+                transaction.objectStore("videos").put(file, "savedVideo");
+                
+                transaction.oncomplete = () => {
+                    status.innerText = "تم حفظ الفيديو بنجاح! الآن يمكن لصديقك رؤيته بدون إنترنت.";
+                    displayVideo(file);
+                };
+            }
+        });
+
+        // وظيفة عرض الفيديو من المتصفح
+        function loadVideoFromDB() {
+            const transaction = db.transaction(["videos"], "readonly");
+            const request = transaction.objectStore("videos").get("savedVideo");
+
+            request.onsuccess = () => {
+                if (request.result) {
+                    status.innerText = "تم تحميل الفيديو من ذاكرة المتصفح (يعمل بدون إنترنت).";
+                    displayVideo(request.result);
+                } else {
+                    status.innerText = "لا يوجد فيديو محفوظ حالياً.";
+                }
+            };
+        }
+
+        function displayVideo(blob) {
+            const videoUrl = URL.createObjectURL(blob);
+            videoPlayer.src = videoUrl;
+            videoPlayer.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
