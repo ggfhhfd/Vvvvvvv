@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClashData - إدارة الفيديوهات</title>
+    <title>ClashData - إدارة وتحميل الفيديوهات</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: white; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
         .upload-container { background: #1e1e1e; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 450px; text-align: center; margin-bottom: 20px; }
@@ -19,9 +19,14 @@
         /* تنسيق قائمة الفيديوهات */
         .video-item { background: #262626; padding: 15px; border-radius: 15px; margin-bottom: 20px; width: 100%; max-width: 450px; border: 1px solid #333; position: relative; }
         video { width: 100%; border-radius: 10px; margin-top: 10px; background: #000; }
-        .delete-btn { background: rgba(255, 71, 87, 0.2); color: #ff4757; border: 1px solid #ff4757; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; float: left; transition: 0.3s; }
+        
+        .actions { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
+        .delete-btn { background: none; color: #ff4757; border: 1px solid #ff4757; padding: 4px 8px; border-radius: 5px; cursor: pointer; font-size: 11px; transition: 0.3s; }
         .delete-btn:hover { background: #ff4757; color: white; }
-        .video-title { font-size: 14px; color: #eee; font-weight: bold; display: block; margin-bottom: 5px; }
+        
+        .download-link { background: #2ed573; color: white; text-decoration: none; padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: bold; display: inline-flex; align-items: center; transition: 0.3s; }
+        .download-link:hover { background: #26af5c; transform: translateY(-1px); }
+        .video-title { font-size: 14px; color: #eee; font-weight: bold; text-align: right; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
     </style>
 </head>
 <body>
@@ -40,12 +45,14 @@
 
     <h3 style="margin-top: 20px;">📺 الفيديوهات المرفوعة</h3>
     <div id="videoList" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-        </div>
+        <p style="color:#666;">جاري تحميل القائمة...</p>
+    </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+    // بياناتك (ثابتة ومجربة)
     const firebaseConfig = {
         apiKey: "AIzaSyAm1OfTW_qS4lhSGlqgDd6fiLDj3u93wqI",
         authDomain: "clashdata-8424c.firebaseapp.com",
@@ -60,7 +67,6 @@
     const CLOUD_NAME = "dkpddgzqj";
     const UPLOAD_PRESET = "b2aumssr";
 
-    // دالة الرفع
     window.startUploadProcess = async function() {
         const fileInput = document.getElementById('videoFile');
         const file = fileInput.files[0];
@@ -99,13 +105,13 @@
                     status.innerText = "تم بنجاح! ✅";
                     btn.disabled = false;
                     fileInput.value = "";
+                    setTimeout(() => { progressArea.style.display = 'none'; }, 2000);
                 });
             }
         };
         xhr.send(formData);
     };
 
-    // دالة عرض الفيديوهات والحذف
     const videoListDiv = document.getElementById('videoList');
     onValue(ref(db, 'my_videos'), (snapshot) => {
         videoListDiv.innerHTML = "";
@@ -113,12 +119,21 @@
         if (data) {
             Object.keys(data).reverse().forEach(key => {
                 const video = data[key];
+                
+                // تعديل الرابط ليصبح رابط تحميل مباشر (إضافة fl_attachment)
+                const downloadUrl = video.url.replace('/upload/', '/upload/fl_attachment/');
+
                 const item = document.createElement('div');
                 item.className = 'video-item';
                 item.innerHTML = `
-                    <button class="delete-btn" onclick="deleteVideo('${key}')">حذف 🗑️</button>
-                    <span class="video-title">${video.name}</span>
-                    <video controls src="${video.url}"></video>
+                    <div class="actions">
+                        <span class="video-title" title="${video.name}">${video.name}</span>
+                        <div>
+                            <a href="${downloadUrl}" class="download-link" title="تحميل للمشاهدة بدون نت">تحميل 📥</a>
+                            <button class="delete-btn" onclick="deleteVideo('${key}')">حذف 🗑️</button>
+                        </div>
+                    </div>
+                    <video controls src="${video.url}" preload="metadata"></video>
                 `;
                 videoListDiv.appendChild(item);
             });
@@ -127,7 +142,6 @@
         }
     });
 
-    // دالة الحذف
     window.deleteVideo = function(id) {
         if(confirm("هل أنت متأكد من حذف هذا الفيديو؟")) {
             remove(ref(db, `my_videos/${id}`));
