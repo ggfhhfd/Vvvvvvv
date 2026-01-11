@@ -1,122 +1,26 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>محمل الفيديو النفاث - استئناف ذكي</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
     <style>
-        body { font-family: -apple-system, system-ui; background: #f0f0f7; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 400px; text-align: center; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
-        button { width: 48%; padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        #startBtn { background: #007aff; color: white; width: 100%; }
-        #pauseBtn { background: #ff3b30; color: white; display: none; }
-        #resumeBtn { background: #34c759; color: white; display: none; }
-        .progress-bar { width: 100%; background: #eee; height: 10px; border-radius: 5px; margin-top: 20px; display: none; overflow: hidden; }
-        #fill { width: 0%; height: 100%; background: #007aff; }
-        #status { font-size: 12px; color: #666; margin-top: 10px; }
+        body { margin: 0; background: #000; }
+        #video-player { width: 100vw; height: 100vh; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h3>🚀 محمل الفيديو الذكي</h3>
-    <input type="text" id="videoUrl" placeholder="أدخل رابط الفيديو هنا...">
-    <div style="display: flex; gap: 4%;">
-        <button id="startBtn" onclick="startDownload()">بدء التحميل</button>
-        <button id="pauseBtn" onclick="pauseDownload()">إيقاف مؤقت</button>
-        <button id="resumeBtn" onclick="startDownload()">استئناف</button>
-    </div>
-    <div class="progress-bar" id="pBar"><div id="fill"></div></div>
-    <div id="status">جاهز للتحميل</div>
-</div>
+<video id="video-player">
+    <source src="https://abra--5e4bd524.api.cosmic-crab.buzz/c08625d599d38e7450b5a8aae1c1c93ad3eb6eb5/%D9%85%D9%88%D9%83%D8%A7%20%D9%85%D9%88%D9%83%D8%A7%20%281993%29/%5BMo7tas%5D%20%D9%85%D9%88%D9%83%D8%A7%20%D9%85%D9%88%D9%83%D8%A7%20-%2001%20%5B720p%5D%20%28Darkulime%29.mkv?api-key=8acbcf1e-732c-4574-a3bf-27e6a85b86f1&download=false&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjgyMjE1MDIsInJhdGUiOiI1TSIsInJvbGUiOiJmcmVlIiwic2Vzc2lvbklEIjoiTVRjMk5qTXpORGMxTW54T2QzZEJUa1pzVUZORk5VUlJWbWhZVlZVMVVGTlZiRk5VVm1kNVYxWnNVMVpGUmtWU1JWRXdUVEE1V0ZacVVrbE5hazVLVTBVMVNGTlZNVWRXYTNoaFRXc3hSVlpFV2tkTk1FVTlmUFhVQTl0VjJsOURkcEh0RGEzVjJoTlM1N1lzV3Rfd0s2VW5sUGl6N2tOUyIsImRvbWFpbiI6IndlYnRvci5pbyIsImFnZW50IjoiTW96aWxsYS81LjAgKE1hY2ludG9zaDsgSW50ZWwgTWFjIE9TIFggMTBfMTVfNykgQXBwbGVXZWJLaXQvNjA1LjEuMTUgKEtIVE1MLCBsaWtlIEdlY2tvKSBWZXJzaW9uLzE2LjYuMSBTYWZhcmkvNjA1LjEuMTUiLCJyZW1vdGVBZGRyZXNzIjoiMjAwMToxNmEyOmMxM2M6Njc2NzozNDhmOmFkZmI6ZThiOTplNTlhIn0.-TJ2_21NIURBukx1_oydXuFqpz-VN_OtIi9LRNa4rao" type="video/mp4" />
+</video>
 
 <script>
-    let totalSize = 0;
-    let downloadedBytes = 0;
-    let chunks = []; // مصفوفة لتخزين البيانات التي اكتملت
-    let isPaused = false;
-    let controller;
-
-    async function startDownload() {
-        const url = document.getElementById('videoUrl').value;
-        if (!url) return alert("يرجى وضع الرابط");
-
-        isPaused = false;
-        document.getElementById('startBtn').style.display = 'none';
-        document.getElementById('resumeBtn').style.display = 'none';
-        document.getElementById('pauseBtn').style.display = 'inline-block';
-        document.getElementById('pBar').style.display = 'block';
-
-        // إنشاء وحدة تحكم جديدة للتمكن من الإيقاف
-        controller = new AbortController();
-
-        try {
-            // 1. فحص حجم الملف إذا كانت المرة الأولى
-            if (totalSize === 0) {
-                const headRes = await fetch(url, { method: 'HEAD' });
-                totalSize = parseInt(headRes.headers.get('content-length'));
-            }
-
-            // 2. طلب البيانات من آخر نقطة توقفنا عندها (Range Header)
-            const response = await fetch(url, {
-                headers: { 'Range': `bytes=${downloadedBytes}-` },
-                signal: controller.signal
-            });
-
-            const reader = response.body.getReader();
-            
-            while (true) {
-                const { done, value } = await reader.read();
-                
-                if (done) {
-                    finishDownload();
-                    break;
-                }
-
-                chunks.push(value);
-                downloadedBytes += value.length;
-
-                // تحديث الواجهة
-                let percent = ((downloadedBytes / totalSize) * 100).toFixed(1);
-                document.getElementById('fill').style.width = percent + "%";
-                document.getElementById('status').innerText = `تم تحميل ${percent}% (${(downloadedBytes / 1024 / 1024).toFixed(2)} MB)`;
-
-                if (isPaused) break;
-            }
-        } catch (err) {
-            if (err.name === 'AbortError') {
-                console.log("تم الإيقاف بواسطة المستخدم");
-            } else {
-                document.getElementById('status').innerText = "حدث خطأ في الاتصال بالسيرفر";
-            }
+    var myFP = fluidPlayer('video-player', {
+        layoutControls: {
+            fillToContainer: true,
+            autoPlay: true
         }
-    }
-
-    function pauseDownload() {
-        isPaused = true;
-        controller.abort(); // قطع الاتصال فوراً
-        document.getElementById('pauseBtn').style.display = 'none';
-        document.getElementById('resumeBtn').style.display = 'inline-block';
-        document.getElementById('status').innerText = "تم الإيقاف.. البيانات محفوظة في الذاكرة";
-    }
-
-    function finishDownload() {
-        const blob = new Blob(chunks, { type: 'video/mp4' });
-        const downloadUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = "video_" + new Date().getTime() + ".mp4";
-        a.click();
-        
-        document.getElementById('status').innerText = "اكتمل التحميل بنجاح!";
-        document.getElementById('pauseBtn').style.display = 'none';
-        document.getElementById('startBtn').style.display = 'inline-block';
-        
-        // إعادة التصفير للتحميل القادم
-        totalSize = 0;
-        downloadedBytes = 0;
-        chunks = [];
-    }
+    });
 </script>
 </body>
 </html>
