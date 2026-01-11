@@ -1,99 +1,48 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>رفع فيديوهات كبيرة | Firebase</title>
-    <style>
-        :root { --primary: #ffa000; --bg: #121212; --card: #1e1e1e; }
-        body { font-family: sans-serif; background: var(--bg); color: white; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { background: var(--card); padding: 20px; border-radius: 15px; width: 100%; max-width: 400px; text-align: center; }
-        input[type="file"] { margin: 20px 0; width: 100%; }
-        button { background: var(--primary); border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
-        #prog-container { width: 100%; background: #333; height: 10px; border-radius: 5px; margin-top: 15px; display: none; overflow: hidden; }
-        #prog-bar { height: 100%; background: var(--primary); width: 0%; transition: 0.2s; }
-        #status { margin-top: 10px; font-size: 14px; color: #ccc; }
-    </style>
-</head>
-<body>
-
-    <div class="container">
-        <h2>رفع فيديو (167MB+)</h2>
-        <input type="file" id="videoFile" accept="video/*">
-        <button id="uploadBtn">ابدأ الرفع الآن</button>
-        
-        <div id="prog-container"><div id="prog-bar"></div></div>
-        <div id="status"></div>
+<div id="videoContainer" style="max-width: 500px; margin: auto; text-align: center; font-family: sans-serif; background: #1a1a1a; padding: 20px; border-radius: 15px; color: white;">
+    
+    <h3 id="statusText">جاري تجهيز الفيديو... (0%)</h3>
+    
+    <div style="width: 100%; background: #333; height: 12px; border-radius: 6px; margin-bottom: 20px; overflow: hidden;">
+        <div id="bufferedBar" style="width: 0%; background: #28a745; height: 100%; transition: 0.3s;"></div>
     </div>
 
-<script type="module">
-    // استيراد المكتبات المطلوبة من Firebase
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref as dbRef, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-    import { getStorage, ref as stRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+    <video id="myVideo" width="100%" controls preload="auto" style="display: none; border-radius: 10px;">
+        <source src="رابط_الفيديو_المباشر_هنا" type="video/mp4">
+    </video>
 
-    // إعدادات مشروعك (نفس التي استخدمتها سابقاً)
-    const firebaseConfig = {
-        apiKey: "AIzaSyAm1OfTW_qS4lhSGlqgDd6fiLDj3u93wqI",
-        authDomain: "clashdata-8424c.firebaseapp.com",
-        databaseURL: "https://clashdata-8424c-default-rtdb.firebaseio.com",
-        projectId: "clashdata-8424c",
-        storageBucket: "clashdata-8424c.appspot.com", // تأكد من صحة هذا الرابط من لوحة تحكم Firebase
-        appId: "1:1063000922754:web:87087f81c28c2659cb329b"
-    };
+    <p id="infoText" style="font-size: 12px; color: #aaa;">يرجى الانتظار حتى يكتمل الخط الأخضر لتتمكن من المشاهدة بدون نت</p>
+</div>
 
-    const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app);
-    const storage = getStorage(app);
+<script>
+    const video = document.getElementById('myVideo');
+    const bufferedBar = document.getElementById('bufferedBar');
+    const statusText = document.getElementById('statusText');
+    const infoText = document.getElementById('infoText');
 
-    document.getElementById('uploadBtn').onclick = function() {
-        const file = document.getElementById('videoFile').files[0];
-        if (!file) return alert("اختر ملف أولاً");
+    // مراقبة تحميل الفيديو في الذاكرة (Buffering)
+    video.addEventListener('progress', () => {
+        if (video.buffered.length > 0) {
+            const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+            const duration = video.duration;
+            if (duration > 0) {
+                const percent = (bufferedEnd / duration) * 100;
+                bufferedBar.style.width = percent + '%';
+                statusText.innerText = `جاري التحميل... (${Math.round(percent)}%)`;
 
-        const btn = this;
-        const status = document.getElementById('status');
-        const progContainer = document.getElementById('prog-container');
-        const progBar = document.getElementById('prog-bar');
-
-        btn.disabled = true;
-        progContainer.style.display = "block";
-        status.innerText = "جاري تهيئة الرفع...";
-
-        // 1. إنشاء مرجع للملف في Firebase Storage
-        const storageRef = stRef(storage, 'videos/' + Date.now() + "_" + file.name);
-        
-        // 2. بدء عملية الرفع مع ميزة مراقبة التقدم (Resumable Upload)
-        const uploadTask = uploadBytesResumable(storageRef, file);
-
-        uploadTask.on('state_changed', 
-            (snapshot) => {
-                // حساب نسبة التقدم وتحديث الشريط
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                progBar.style.width = progress + "%";
-                status.innerText = "تم رفع " + Math.round(progress) + "%";
-            }, 
-            (error) => {
-                // في حال وجود خطأ (غالباً بسبب قوانين الحماية Rules)
-                alert("فشل الرفع: " + error.message);
-                btn.disabled = false;
-            }, 
-            () => {
-                // 3. عند اكتمال الرفع بنجاح، نحصل على رابط الفيديو
-                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                    // 4. حفظ الرابط في Database ليعرض في القائمة
-                    push(dbRef(database, 'my_videos'), {
-                        name: file.name,
-                        url: downloadURL,
-                        date: new Date().toLocaleString('ar-SA')
-                    }).then(() => {
-                        status.innerText = "✅ اكتمل الرفع والحفظ بنجاح!";
-                        btn.disabled = false;
-                        alert("تم رفع الفيديو بنجاح!");
-                    });
-                });
+                // إذا اكتمل التحميل 100%
+                if (percent >= 99) {
+                    statusText.innerText = "✅ اكتمل التحميل! يمكنك المشاهدة الآن";
+                    statusText.style.color = "#28a745";
+                    video.style.display = "block"; // إظهار الفيديو
+                    infoText.innerText = "الفيديو الآن محمل في الذاكرة، يمكنك إغلاق النت والمشاهدة طالما الصفحة مفتوحة.";
+                }
             }
-        );
-    };
+        }
+    });
+
+    // تنبيه في حال وجود خطأ في الرابط
+    video.addEventListener('error', () => {
+        statusText.innerText = "❌ خطأ في رابط الفيديو أو الحجم كبير جداً";
+        statusText.style.color = "#ff4444";
+    });
 </script>
-</body>
-</html>
