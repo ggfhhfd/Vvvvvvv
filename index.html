@@ -1,46 +1,57 @@
-<div id="mainContainer" style="max-width: 450px; margin: 50px auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #ffffff; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; border: 1px solid #eee;">
-    
-    <h2 id="statusText" style="color: #333; margin-bottom: 10px;">⏳ جاري التحميل...</h2>
-    <p id="percentageText" style="font-size: 24px; font-weight: bold; color: #28a745; margin: 0;">0%</p>
-    
-    <div style="width: 100%; background: #e0e0e0; height: 15px; border-radius: 10px; margin: 20px 0; overflow: hidden; position: relative;">
-        <div id="bufferedBar" style="width: 0%; background: linear-gradient(90deg, #28a745, #85e085); height: 100%; transition: 0.4s ease-out;"></div>
-    </div>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { background: #1a1a1a; color: white; font-family: sans-serif; text-align: center; padding: 40px; }
+        textarea { width: 90%; height: 100px; padding: 15px; border-radius: 12px; background: #2c2c2c; color: white; border: 1px solid #444; font-size: 18px; }
+        button { margin-top: 20px; padding: 15px 30px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; background: #007bff; color: white; font-size: 18px; }
+        #status { margin-top: 20px; color: #ffca28; }
+    </style>
+</head>
+<body>
 
-    <p style="font-size: 14px; color: #777; line-height: 1.6;">بسبب حجم الفيديو (167MB)، يرجى عدم إغلاق الصفحة حتى يكتمل الخط الأخضر.</p>
+    <h2>🗣️ صوت مترجم آيفون (الزمن الجميل)</h2>
+    <textarea id="inputText" placeholder="اكتب النص هنا لسماعه بصوت الرجل..."></textarea>
+    <br>
+    <button onclick="speakLikeOldIphone()">نطق بصوت الرجل</button>
+    <p id="status"></p>
 
-    <button onclick="location.reload()" style="margin-top: 20px; background: #ff4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">❌ إلغاء التحميل والعودة</button>
+    <script>
+        function speakLikeOldIphone() {
+            const text = document.getElementById('inputText').value;
+            if (!text) return alert("اكتب شي يا خوي!");
 
-    <video id="myVideo" preload="auto" style="display: none; width: 100%; border-radius: 15px; margin-top: 20px;">
-        <source src="رابط_الفيديو_المباشر_هنا" type="video/mp4">
-    </video>
-</div>
+            // إلغاء أي نطق سابق
+            window.speechSynthesis.cancel();
 
-<script>
-    const video = document.getElementById('myVideo');
-    const bufferedBar = document.getElementById('bufferedBar');
-    const statusText = document.getElementById('statusText');
-    const percentageText = document.getElementById('percentageText');
+            const msg = new SpeechSynthesisUtterance();
+            msg.text = text;
+            msg.lang = 'ar-SA'; 
 
-    video.addEventListener('progress', () => {
-        if (video.buffered.length > 0) {
-            const bufferedEnd = video.buffered.end(video.buffered.length - 1);
-            const duration = video.duration;
-            if (duration > 0) {
-                const percent = Math.round((bufferedEnd / duration) * 100);
-                bufferedBar.style.width = percent + '%';
-                percentageText.innerText = percent + '%';
+            // البحث عن صوت رجالي متاح في النظام
+            const voices = window.speechSynthesis.getVoices();
+            const maleVoice = voices.find(voice => 
+                voice.lang.includes('ar') && (voice.name.toLowerCase().includes('male') || voice.name.toLowerCase().includes('maged'))
+            );
 
-                if (percent >= 99) {
-                    statusText.innerText = "✅ الفيديو جاهز!";
-                    statusText.style.color = "#28a745";
-                    video.style.display = "block"; 
-                    percentageText.style.display = "none";
-                }
+            if (maleVoice) {
+                msg.voice = maleVoice;
             }
-        }
-    });
 
-    // تشغيل الفيديو تلقائياً في الخلفية ليبدأ التحميل
-    video.load();
-</script>
+            // الزبدة هنا: تعديل الطبقة والسرعة لمحاكاة الصوت القديم
+            msg.pitch = 0.7; // طبقة منخفضة تعطي خشونة رجالية
+            msg.rate = 0.8;  // سرعة أبطأ قليلاً لتعطي طابع آلي قديم
+            
+            document.getElementById('status').innerText = "جاري النطق بصوت الرجل...";
+            
+            msg.onend = () => { document.getElementById('status').innerText = ""; };
+
+            window.speechSynthesis.speak(msg);
+        }
+
+        // تحميل الأصوات في الخلفية (مهم لبعض المتصفحات)
+        window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+    </script>
+</body>
+</html>
