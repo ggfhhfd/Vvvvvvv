@@ -2,55 +2,59 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ClashData Pro | Bypass Size Limit</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClashData - النسخة النهائية</title>
     <style>
-        :root { --primary: #ff4757; --bg: #0f0f0f; --card: #1e1e1e; --text: #ffffff; --success: #2ed573; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
-        .upload-container { background: var(--card); padding: 25px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.7); width: 100%; max-width: 500px; box-sizing: border-box; border: 1px solid #333; }
-        h2 { color: var(--primary); text-align: center; margin-bottom: 20px; }
-        .tabs { display: flex; background: #121212; border-radius: 15px; padding: 5px; margin-bottom: 20px; }
-        .tab-btn { background: transparent; border: none; color: #888; padding: 12px; cursor: pointer; border-radius: 12px; transition: 0.3s; flex: 1; font-weight: bold; }
-        .tab-btn.active { background: var(--primary); color: white; }
-        input { background: #2d2d2d; border: 2px solid #333; padding: 15px; border-radius: 12px; width: 100%; box-sizing: border-box; color: white; margin-bottom: 15px; }
-        .progress-wrapper { display: none; width: 100%; background: #121212; height: 12px; border-radius: 10px; margin-bottom: 15px; overflow: hidden; border: 1px solid #333; }
-        #progressBar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--primary), #ff6b81); transition: width 0.3s ease; }
-        button#actionBtn { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; }
-        button:disabled { background: #444; cursor: not-allowed; }
-        #status { font-size: 13px; margin-bottom: 8px; text-align: center; color: #eccc68; }
-        .video-grid { width: 100%; max-width: 500px; margin-top: 20px; }
-        .video-item { background: var(--card); border-radius: 20px; margin-bottom: 25px; overflow: hidden; border: 1px solid #2a2a2a; }
-        video { width: 100%; display: block; background: #000; height: 250px; }
-        .video-info { padding: 15px; }
-        .btns-group { display: flex; gap: 10px; margin-top: 10px; }
-        .download-btn { flex: 2; background: var(--success); color: white; text-decoration: none; padding: 10px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 14px; }
-        .delete-btn { flex: 1; background: rgba(255, 71, 87, 0.1); color: var(--primary); border: 1px solid var(--primary); padding: 10px; border-radius: 10px; cursor: pointer; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #121212; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .upload-container { background: #1e1e1e; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; max-width: 450px; text-align: center; }
+        h2 { color: #ff4757; margin-bottom: 20px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+        .tab-btn { background: #333; border: none; color: white; padding: 10px 20px; cursor: pointer; border-radius: 10px; transition: 0.3s; flex: 1; }
+        .tab-btn.active { background: #ff4757; font-weight: bold; }
+        input { background: #2d2d2d; border: 1px solid #444; padding: 15px; border-radius: 10px; width: 100%; box-sizing: border-box; color: white; margin-bottom: 15px; }
+        button#actionBtn { background: linear-gradient(45deg, #ff4757, #ff6b81); color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; }
+        button:disabled { opacity: 0.5; }
+        
+        /* قائمة الفيديوهات */
+        .video-item { background: #262626; padding: 15px; border-radius: 15px; margin-top: 20px; width: 100%; max-width: 450px; border: 1px solid #333; }
+        video { width: 100%; border-radius: 10px; margin-top: 10px; background: #000; }
+        .item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .video-title { font-size: 14px; font-weight: bold; color: #eee; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
+        .btns-group { display: flex; gap: 8px; }
+        .download-btn { background: #2ed573; color: white; text-decoration: none; padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; }
+        .delete-btn { background: none; color: #ff4757; border: 1px solid #ff4757; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+        .delete-btn:hover { background: #ff4757; color: white; }
     </style>
 </head>
 <body>
 
     <div class="upload-container">
-        <h2>🚀 ClashData Pro</h2>
+        <h2>🚀 ClashData</h2>
+        
         <div class="tabs">
-            <button class="tab-btn active" id="btn-file" onclick="setMode('file')">ملف فيديو</button>
-            <button class="tab-btn" id="btn-url" onclick="setMode('url')">رابط مباشر</button>
+            <button class="tab-btn active" id="fileTab" onclick="toggleMode('file')">رفع ملف</button>
+            <button class="tab-btn" id="urlTab" onclick="toggleMode('url')">لصق رابط</button>
         </div>
 
-        <div id="inputArea">
+        <div id="fileArea">
             <input type="file" id="videoFile" accept="video/*">
         </div>
-        
-        <div id="status"></div>
-        <div class="progress-wrapper" id="progWrapper"><div id="progressBar"></div></div>
 
-        <button id="actionBtn" onclick="startUpload()">ابدأ الرفع (تجاوز حد الـ 100MB)</button>
+        <div id="urlArea" style="display: none;">
+            <input type="text" id="videoUrlInput" placeholder="الصق رابط mp4 المباشر هنا...">
+        </div>
+        
+        <p id="status" style="font-size: 13px; color: #eccc68; margin-bottom: 10px;"></p>
+        <button id="actionBtn" onclick="processUpload()">ابدأ الرفع / المعالجة</button>
     </div>
 
-    <div id="videoList" class="video-grid"></div>
+    <h3 style="margin-top: 30px;">📺 مكتبة الفيديوهات</h3>
+    <div id="videoList" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAm1OfTW_qS4lhSGlqgDd6fiLDj3u93wqI",
@@ -66,138 +70,98 @@
     const CLOUD_NAME = "dkpddgzqj";
     const UPLOAD_PRESET = "b2aumssr";
 
-    let mode = 'file';
+    let uploadMode = 'file';
 
-    window.setMode = function(m) {
-        mode = m;
-        document.getElementById('btn-file').classList.toggle('active', m === 'file');
-        document.getElementById('btn-url').classList.toggle('active', m === 'url');
-        document.getElementById('inputArea').innerHTML = m === 'file' 
-            ? '<input type="file" id="videoFile" accept="video/*">' 
-            : '<input type="text" id="videoUrlInput" placeholder="الصق رابط الفيديو المباشر...">';
+    window.toggleMode = function(m) {
+        uploadMode = m;
+        document.getElementById('fileArea').style.display = m === 'file' ? 'block' : 'none';
+        document.getElementById('urlArea').style.display = m === 'url' ? 'block' : 'none';
+        document.getElementById('fileTab').classList.toggle('active', m === 'file');
+        document.getElementById('urlTab').classList.toggle('active', m === 'url');
     };
 
-    window.startUpload = async function() {
-        const fileInput = document.getElementById('videoFile');
-        const urlInput = document.getElementById('videoUrlInput');
-        const source = mode === 'file' ? fileInput.files[0] : urlInput.value;
-
-        if(!source) return alert("فضلاً اختر ملفاً أو ضع رابطاً");
-
+    window.processUpload = async function() {
         const btn = document.getElementById('actionBtn');
         const status = document.getElementById('status');
-        const progWrapper = document.getElementById('progWrapper');
-        const progressBar = document.getElementById('progressBar');
+        let source;
+
+        if (uploadMode === 'file') {
+            source = document.getElementById('videoFile').files[0];
+            if (!source) return alert("الرجاء اختيار ملف فيديو");
+        } else {
+            source = document.getElementById('videoUrlInput').value;
+            if (!source) return alert("الرجاء لصق رابط فيديو");
+        }
 
         btn.disabled = true;
-        progWrapper.style.display = "block";
-        status.innerText = "⏳ جاري الرفع بنظام الأجزاء الذكي...";
+        status.innerText = "جاري المعالجة والرفع للسحابة...";
 
-        // إعدادات الرفع بالأجزاء
-        const CHUNK_SIZE = 5 * 1024 * 1024; // 5 ميجا لكل قطعة
-        const file = source;
-        const totalSize = file.size;
-        const uniqueId = 'clash_' + Date.now();
+        const formData = new FormData();
+        formData.append('file', source);
+        formData.append('upload_preset', UPLOAD_PRESET);
 
         try {
-            if (mode === 'url') {
-                // للروابط، الرفع العادي (إذا كان الرابط كبيراً جداً قد يفشل، يفضل رفع الملف نفسه)
-                await uploadNormal(source);
+            const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.secure_url) {
+                const videoRef = ref(db, 'my_videos');
+                push(videoRef, {
+                    name: uploadMode === 'file' ? source.name : "فيديو من رابط خارجي",
+                    url: data.secure_url,
+                    date: new Date().toISOString()
+                }).then(() => {
+                    status.innerText = "تم الحفظ بنجاح! ✅";
+                    btn.disabled = false;
+                    document.getElementById('videoUrlInput').value = "";
+                    document.getElementById('videoFile').value = "";
+                });
             } else {
-                // للملفات الكبيرة، التقسيم لقطع
-                for (let start = 0; start < totalSize; start += CHUNK_SIZE) {
-                    const end = Math.min(start + CHUNK_SIZE, totalSize);
-                    const chunk = file.slice(start, end);
-                    const isLast = end === totalSize;
-                    const contentRange = `bytes ${start}-${end - 1}/${totalSize}`;
-                    
-                    await uploadChunk(chunk, contentRange, uniqueId, isLast);
-                    
-                    const percent = Math.round((end / totalSize) * 100);
-                    progressBar.style.width = percent + "%";
-                    status.innerText = `تم رفع: ${percent}%`;
-                }
+                alert("فشل الرفع. تأكد من جودة الرابط أو الملف.");
+                btn.disabled = false;
             }
-        } catch (error) {
-            alert("فشل الرفع: " + error.message);
+        } catch (err) {
+            alert("خطأ في الاتصال");
             btn.disabled = false;
         }
     };
 
-    async function uploadChunk(chunk, range, uniqueId, isLast) {
-        const formData = new FormData();
-        formData.append('file', chunk);
-        formData.append('upload_preset', UPLOAD_PRESET);
-        formData.append('resource_type', 'video');
-
-        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Unique-Upload-Id': uniqueId,
-                'Content-Range': range
-            }
-        });
-
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error.message);
-        if (isLast) saveToFirebase(data);
-    }
-
-    async function uploadNormal(url) {
-        const formData = new FormData();
-        formData.append('file', url);
-        formData.append('upload_preset', UPLOAD_PRESET);
-        formData.append('resource_type', 'video');
-
-        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`, {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error.message);
-        saveToFirebase(data);
-    }
-
-    function saveToFirebase(data) {
-        push(ref(db, 'my_videos'), {
-            name: mode === 'file' ? document.getElementById('videoFile').files[0].name : "فيديو من رابط",
-            url: data.secure_url,
-            format: data.format,
-            date: new Date().toLocaleString('ar-SA')
-        });
-        document.getElementById('status').innerText = "✅ اكتمل الرفع بنجاح!";
-        setTimeout(() => location.reload(), 2000);
-    }
-
+    // عرض القائمة مع أزرار الحذف والتحميل
+    const videoListDiv = document.getElementById('videoList');
     onValue(ref(db, 'my_videos'), (snapshot) => {
-        const listDiv = document.getElementById('videoList');
-        listDiv.innerHTML = "";
+        videoListDiv.innerHTML = "";
         const data = snapshot.val();
-        if(data) {
+        if (data) {
             Object.keys(data).reverse().forEach(key => {
-                const v = data[key];
-                // تحويل تلقائي للصيغة لتعمل في المتصفح
-                const displayUrl = v.url.replace(new RegExp(`\\.${v.format}$`), '.mp4').replace('/upload/', '/upload/f_auto,q_auto/');
+                const video = data[key];
+                const downloadUrl = video.url.replace('/upload/', '/upload/fl_attachment/');
+                
                 const item = document.createElement('div');
                 item.className = 'video-item';
                 item.innerHTML = `
-                    <video controls preload="metadata" src="${displayUrl}"></video>
-                    <div class="video-info">
-                        <div style="font-weight:bold; margin-bottom:10px;">${v.name}</div>
+                    <div class="item-header">
+                        <span class="video-title">${video.name}</span>
                         <div class="btns-group">
-                            <a href="${v.url.replace('/upload/', '/upload/fl_attachment/')}" class="download-btn">تحميل الملف 📥</a>
-                            <button class="delete-btn" onclick="deleteV('${key}')">حذف 🗑️</button>
+                            <a href="${downloadUrl}" class="download-btn">تحميل 📥</a>
+                            <button class="delete-btn" onclick="deleteVideo('${key}')">حذف 🗑️</button>
                         </div>
-                    </div>`;
-                listDiv.appendChild(item);
+                    </div>
+                    <video controls src="${video.url}" preload="metadata"></video>
+                `;
+                videoListDiv.appendChild(item);
             });
+        } else {
+            videoListDiv.innerHTML = "<p style='color:#666;'>المكتبة فارغة حالياً.</p>";
         }
     });
 
-    window.deleteV = function(id) {
-        if(prompt("كلمة السر الحذف:") === "1234") remove(ref(db, `my_videos/${id}`));
+    window.deleteVideo = function(id) {
+        if(confirm("هل أنت متأكد من حذف هذا الفيديو نهائياً من المكتبة؟")) {
+            remove(ref(db, `my_videos/${id}`));
+        }
     };
 </script>
 </body>
