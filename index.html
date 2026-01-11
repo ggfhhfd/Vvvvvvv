@@ -2,85 +2,121 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تحميل وتشغيل مباشر</title>
+    <title>محمل الفيديو النفاث - استئناف ذكي</title>
     <style>
-        body { background: #1a1a1a; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        .container { max-width: 500px; margin: auto; background: #222; padding: 20px; border-radius: 15px; }
-        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; }
-        button { width: 95%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        #status { margin: 10px 0; font-size: 14px; color: #f1c40f; }
-        video { width: 100%; margin-top: 20px; border-radius: 10px; display: none; }
-        progress { width: 100%; height: 20px; display: none; margin-top: 10px; }
+        body { font-family: -apple-system, system-ui; background: #f0f0f7; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 400px; text-align: center; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+        button { width: 48%; padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        #startBtn { background: #007aff; color: white; width: 100%; }
+        #pauseBtn { background: #ff3b30; color: white; display: none; }
+        #resumeBtn { background: #34c759; color: white; display: none; }
+        .progress-bar { width: 100%; background: #eee; height: 10px; border-radius: 5px; margin-top: 20px; display: none; overflow: hidden; }
+        #fill { width: 0%; height: 100%; background: #007aff; }
+        #status { font-size: 12px; color: #666; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h3>تحميل وتشغيل في المتصفح</h3>
-    <input type="text" id="linkInput" placeholder="الصق الرابط هنا...">
-    <button onclick="fetchAndPlay()">معالجة وتشغيل</button>
-    
-    <div id="status"></div>
-    <progress id="progressBar" value="0" max="100"></progress>
-
-    <video id="vPlayer" controls playsinline></video>
+<div class="box">
+    <h3>🚀 محمل الفيديو الذكي</h3>
+    <input type="text" id="videoUrl" placeholder="أدخل رابط الفيديو هنا...">
+    <div style="display: flex; gap: 4%;">
+        <button id="startBtn" onclick="startDownload()">بدء التحميل</button>
+        <button id="pauseBtn" onclick="pauseDownload()">إيقاف مؤقت</button>
+        <button id="resumeBtn" onclick="startDownload()">استئناف</button>
+    </div>
+    <div class="progress-bar" id="pBar"><div id="fill"></div></div>
+    <div id="status">جاهز للتحميل</div>
 </div>
 
 <script>
-async function fetchAndPlay() {
-    const url = document.getElementById('linkInput').value;
-    const status = document.getElementById('status');
-    const progressBar = document.getElementById('progressBar');
-    const video = document.getElementById('vPlayer');
+    let totalSize = 0;
+    let downloadedBytes = 0;
+    let chunks = []; // مصفوفة لتخزين البيانات التي اكتملت
+    let isPaused = false;
+    let controller;
 
-    if (!url) return alert("ضع الرابط أولاً");
+    async function startDownload() {
+        const url = document.getElementById('videoUrl').value;
+        if (!url) return alert("يرجى وضع الرابط");
 
-    status.innerText = "جاري الاتصال بالرابط...";
-    progressBar.style.display = "block";
+        isPaused = false;
+        document.getElementById('startBtn').style.display = 'none';
+        document.getElementById('resumeBtn').style.display = 'none';
+        document.getElementById('pauseBtn').style.display = 'inline-block';
+        document.getElementById('pBar').style.display = 'block';
 
-    try {
-        // سحب البيانات من الرابط
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("فشل الوصول للرابط. قد يكون منتهي الصلاحية.");
+        // إنشاء وحدة تحكم جديدة للتمكن من الإيقاف
+        controller = new AbortController();
 
-        const contentLength = response.headers.get('content-length');
-        const total = parseInt(contentLength, 10);
-        let loaded = 0;
+        try {
+            // 1. فحص حجم الملف إذا كانت المرة الأولى
+            if (totalSize === 0) {
+                const headRes = await fetch(url, { method: 'HEAD' });
+                totalSize = parseInt(headRes.headers.get('content-length'));
+            }
 
-        const reader = response.body.getReader();
-        const chunks = [];
+            // 2. طلب البيانات من آخر نقطة توقفنا عندها (Range Header)
+            const response = await fetch(url, {
+                headers: { 'Range': `bytes=${downloadedBytes}-` },
+                signal: controller.signal
+            });
 
-        // عملية التحميل إلى ذاكرة المتصفح
-        while(true) {
-            const {done, value} = await reader.read();
-            if (done) break;
-            chunks.push(value);
-            loaded += value.length;
-            if (total) {
-                const percent = Math.round((loaded / total) * 100);
-                progressBar.value = percent;
-                status.innerText = `جاري التحميل في الذاكرة: ${percent}%`;
+            const reader = response.body.getReader();
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                
+                if (done) {
+                    finishDownload();
+                    break;
+                }
+
+                chunks.push(value);
+                downloadedBytes += value.length;
+
+                // تحديث الواجهة
+                let percent = ((downloadedBytes / totalSize) * 100).toFixed(1);
+                document.getElementById('fill').style.width = percent + "%";
+                document.getElementById('status').innerText = `تم تحميل ${percent}% (${(downloadedBytes / 1024 / 1024).toFixed(2)} MB)`;
+
+                if (isPaused) break;
+            }
+        } catch (err) {
+            if (err.name === 'AbortError') {
+                console.log("تم الإيقاف بواسطة المستخدم");
+            } else {
+                document.getElementById('status').innerText = "حدث خطأ في الاتصال بالسيرفر";
             }
         }
-
-        status.innerText = "اكتمل التحميل! جاري التشغيل...";
-        
-        // تحويل البيانات المحملة إلى رابط محلي يقرأه المتصفح
-        const blob = new Blob(chunks, { type: 'video/mp4' }); // جربنا mp4 كصيغة عامة
-        const blobUrl = URL.createObjectURL(blob);
-
-        video.src = blobUrl;
-        video.style.display = "block";
-        progressBar.style.display = "none";
-        video.play();
-
-    } catch (err) {
-        status.innerText = "خطأ: " + err.message;
-        console.error(err);
     }
-}
-</script>
 
+    function pauseDownload() {
+        isPaused = true;
+        controller.abort(); // قطع الاتصال فوراً
+        document.getElementById('pauseBtn').style.display = 'none';
+        document.getElementById('resumeBtn').style.display = 'inline-block';
+        document.getElementById('status').innerText = "تم الإيقاف.. البيانات محفوظة في الذاكرة";
+    }
+
+    function finishDownload() {
+        const blob = new Blob(chunks, { type: 'video/mp4' });
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = "video_" + new Date().getTime() + ".mp4";
+        a.click();
+        
+        document.getElementById('status').innerText = "اكتمل التحميل بنجاح!";
+        document.getElementById('pauseBtn').style.display = 'none';
+        document.getElementById('startBtn').style.display = 'inline-block';
+        
+        // إعادة التصفير للتحميل القادم
+        totalSize = 0;
+        downloadedBytes = 0;
+        chunks = [];
+    }
+</script>
 </body>
 </html>
