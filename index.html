@@ -1,48 +1,46 @@
-<div id="videoContainer" style="max-width: 500px; margin: auto; text-align: center; font-family: sans-serif; background: #1a1a1a; padding: 20px; border-radius: 15px; color: white;">
+<div id="mainContainer" style="max-width: 450px; margin: 50px auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #ffffff; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; border: 1px solid #eee;">
     
-    <h3 id="statusText">جاري تجهيز الفيديو... (0%)</h3>
+    <h2 id="statusText" style="color: #333; margin-bottom: 10px;">⏳ جاري التحميل...</h2>
+    <p id="percentageText" style="font-size: 24px; font-weight: bold; color: #28a745; margin: 0;">0%</p>
     
-    <div style="width: 100%; background: #333; height: 12px; border-radius: 6px; margin-bottom: 20px; overflow: hidden;">
-        <div id="bufferedBar" style="width: 0%; background: #28a745; height: 100%; transition: 0.3s;"></div>
+    <div style="width: 100%; background: #e0e0e0; height: 15px; border-radius: 10px; margin: 20px 0; overflow: hidden; position: relative;">
+        <div id="bufferedBar" style="width: 0%; background: linear-gradient(90deg, #28a745, #85e085); height: 100%; transition: 0.4s ease-out;"></div>
     </div>
 
-    <video id="myVideo" width="100%" controls preload="auto" style="display: none; border-radius: 10px;">
+    <p style="font-size: 14px; color: #777; line-height: 1.6;">بسبب حجم الفيديو (167MB)، يرجى عدم إغلاق الصفحة حتى يكتمل الخط الأخضر.</p>
+
+    <button onclick="location.reload()" style="margin-top: 20px; background: #ff4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">❌ إلغاء التحميل والعودة</button>
+
+    <video id="myVideo" preload="auto" style="display: none; width: 100%; border-radius: 15px; margin-top: 20px;">
         <source src="رابط_الفيديو_المباشر_هنا" type="video/mp4">
     </video>
-
-    <p id="infoText" style="font-size: 12px; color: #aaa;">يرجى الانتظار حتى يكتمل الخط الأخضر لتتمكن من المشاهدة بدون نت</p>
 </div>
 
 <script>
     const video = document.getElementById('myVideo');
     const bufferedBar = document.getElementById('bufferedBar');
     const statusText = document.getElementById('statusText');
-    const infoText = document.getElementById('infoText');
+    const percentageText = document.getElementById('percentageText');
 
-    // مراقبة تحميل الفيديو في الذاكرة (Buffering)
     video.addEventListener('progress', () => {
         if (video.buffered.length > 0) {
             const bufferedEnd = video.buffered.end(video.buffered.length - 1);
             const duration = video.duration;
             if (duration > 0) {
-                const percent = (bufferedEnd / duration) * 100;
+                const percent = Math.round((bufferedEnd / duration) * 100);
                 bufferedBar.style.width = percent + '%';
-                statusText.innerText = `جاري التحميل... (${Math.round(percent)}%)`;
+                percentageText.innerText = percent + '%';
 
-                // إذا اكتمل التحميل 100%
                 if (percent >= 99) {
-                    statusText.innerText = "✅ اكتمل التحميل! يمكنك المشاهدة الآن";
+                    statusText.innerText = "✅ الفيديو جاهز!";
                     statusText.style.color = "#28a745";
-                    video.style.display = "block"; // إظهار الفيديو
-                    infoText.innerText = "الفيديو الآن محمل في الذاكرة، يمكنك إغلاق النت والمشاهدة طالما الصفحة مفتوحة.";
+                    video.style.display = "block"; 
+                    percentageText.style.display = "none";
                 }
             }
         }
     });
 
-    // تنبيه في حال وجود خطأ في الرابط
-    video.addEventListener('error', () => {
-        statusText.innerText = "❌ خطأ في رابط الفيديو أو الحجم كبير جداً";
-        statusText.style.color = "#ff4444";
-    });
+    // تشغيل الفيديو تلقائياً في الخلفية ليبدأ التحميل
+    video.load();
 </script>
