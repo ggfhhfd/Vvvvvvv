@@ -3,55 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { background: #1a1a1a; color: white; font-family: sans-serif; text-align: center; padding: 40px; }
-        textarea { width: 90%; height: 100px; padding: 15px; border-radius: 12px; background: #2c2c2c; color: white; border: 1px solid #444; font-size: 18px; }
-        button { margin-top: 20px; padding: 15px 30px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; background: #007bff; color: white; font-size: 18px; }
-        #status { margin-top: 20px; color: #ffca28; }
+        body { background: #121212; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
+        textarea { width: 90%; height: 100px; padding: 15px; border-radius: 10px; background: #1e1e1e; color: white; border: 1px solid #333; font-size: 18px; margin-bottom: 15px; }
+        select { width: 90%; padding: 12px; border-radius: 8px; background: #333; color: white; border: 1px solid #444; margin-bottom: 15px; cursor: pointer; }
+        button { padding: 15px 30px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; background: #28a745; color: white; font-size: 18px; transition: 0.3s; }
+        button:hover { background: #218838; }
     </style>
 </head>
 <body>
 
-    <h2>🗣️ صوت مترجم آيفون (الزمن الجميل)</h2>
-    <textarea id="inputText" placeholder="اكتب النص هنا لسماعه بصوت الرجل..."></textarea>
+    <h2>🎤 اختر الصوت اللي يعجبك</h2>
+    
+    <textarea id="inputText" placeholder="اكتب النص هنا..."></textarea>
+    
+    <p>اختر من قائمة الأصوات المتاحة في جهازك:</p>
+    <select id="voiceSelect">
+        <option value="">جاري تحميل الأصوات...</option>
+    </select>
+    
     <br>
-    <button onclick="speakLikeOldIphone()">نطق بصوت الرجل</button>
-    <p id="status"></p>
+    <button onclick="speakText()">📣 نطق النص بالصوت المختار</button>
 
     <script>
-        function speakLikeOldIphone() {
-            const text = document.getElementById('inputText').value;
-            if (!text) return alert("اكتب شي يا خوي!");
+        const voiceSelect = document.getElementById('voiceSelect');
+        const inputText = document.getElementById('inputText');
+        let voices = [];
 
-            // إلغاء أي نطق سابق
-            window.speechSynthesis.cancel();
-
-            const msg = new SpeechSynthesisUtterance();
-            msg.text = text;
-            msg.lang = 'ar-SA'; 
-
-            // البحث عن صوت رجالي متاح في النظام
-            const voices = window.speechSynthesis.getVoices();
-            const maleVoice = voices.find(voice => 
-                voice.lang.includes('ar') && (voice.name.toLowerCase().includes('male') || voice.name.toLowerCase().includes('maged'))
-            );
-
-            if (maleVoice) {
-                msg.voice = maleVoice;
-            }
-
-            // الزبدة هنا: تعديل الطبقة والسرعة لمحاكاة الصوت القديم
-            msg.pitch = 0.7; // طبقة منخفضة تعطي خشونة رجالية
-            msg.rate = 0.8;  // سرعة أبطأ قليلاً لتعطي طابع آلي قديم
+        // دالة لجلب الأصوات المتوفرة في النظام (آيفون، أندرويد، ويندوز)
+        function loadVoices() {
+            voices = window.speechSynthesis.getVoices();
+            voiceSelect.innerHTML = ''; // مسح القائمة القديمة
             
-            document.getElementById('status').innerText = "جاري النطق بصوت الرجل...";
-            
-            msg.onend = () => { document.getElementById('status').innerText = ""; };
-
-            window.speechSynthesis.speak(msg);
+            voices.forEach((voice, i) => {
+                const option = document.createElement('option');
+                option.value = i;
+                // عرض اسم الصوت واللغة عشان تفرق بينهم
+                option.textContent = `${voice.name} (${voice.lang})`;
+                
+                // تحديد صوت "ماجد" أو أصوات العربية تلقائياً لو لقيتها
+                if (voice.lang.includes('ar')) {
+                    option.selected = true;
+                }
+                voiceSelect.appendChild(option);
+            });
         }
 
-        // تحميل الأصوات في الخلفية (مهم لبعض المتصفحات)
-        window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+        // تحديث القائمة عند تغير الأصوات (ضروري لبعض المتصفحات)
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+        loadVoices();
+
+        function speakText() {
+            const text = inputText.value;
+            if (!text) return alert("اكتب شي يا خوي!");
+
+            window.speechSynthesis.cancel(); // إلغاء أي نطق شغال
+
+            const msg = new SpeechSynthesisUtterance(text);
+            
+            // اختيار الصوت اللي حددته من القائمة
+            if (voices[voiceSelect.value]) {
+                msg.voice = voices[voiceSelect.value];
+            }
+
+            msg.rate = 0.9; // سرعة النطق
+            msg.pitch = 1.0; // درجة الصوت
+            
+            window.speechSynthesis.speak(msg);
+        }
     </script>
 </body>
 </html>
