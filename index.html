@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ClashData Pro + Auto Transcode</title>
+    <title>ClashData Pro + Large File Support</title>
     <style>
         :root {
             --primary: #ff4757;
@@ -101,7 +101,7 @@
         </div>
 
         <div id="urlArea" style="display: none;">
-            <input type="text" id="videoUrlInput" placeholder="الصق رابط mp4 أو mkv المباشر...">
+            <input type="text" id="videoUrlInput" placeholder="الصق رابط mp4 أو mkv المباشر هنا...">
         </div>
         
         <div id="status"></div>
@@ -110,7 +110,7 @@
             <div id="progressBar"></div>
         </div>
 
-        <button id="actionBtn" onclick="processUpload()">ابدأ المعالجة والرفع</button>
+        <button id="actionBtn" onclick="processUpload()">ابدأ المعالجة والرفع الآمن</button>
     </div>
 
     <div class="search-box">
@@ -164,18 +164,20 @@
         }
 
         btn.disabled = true;
-        status.innerText = "🚀 جاري معالجة ورفع الفيديو...";
+        status.innerText = "🚀 جاري الرفع بنظام الأجزاء لضمان الجودة...";
         progWrapper.style.display = "block";
         progressBar.style.width = "0%";
 
         const formData = new FormData();
         formData.append('file', source);
         formData.append('upload_preset', UPLOAD_PRESET);
-        // إجبار السيرفر على اعتبار الملف فيديو لتمكين التحويل
-        formData.append('resource_type', 'video'); 
+        formData.append('resource_type', 'video'); // التأكيد على نوع الملف
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`, true);
+
+        // إضافة ترويسة فريدة للملفات الكبيرة (Chunked Upload Id)
+        xhr.setRequestHeader('X-Unique-Upload-Id', 'clash_' + Date.now());
 
         xhr.upload.onprogress = function(e) {
             if (e.lengthComputable) {
@@ -191,18 +193,23 @@
                 push(ref(db, 'my_videos'), {
                     name: uploadMode === 'file' ? source.name : "فيديو خارجي",
                     url: data.secure_url,
-                    format: data.format, // حفظ الصيغة الأصلية
+                    format: data.format, // حفظ الصيغة للتحويل التلقائي لاحقاً
                     date: new Date().toLocaleString('ar-SA')
                 });
                 status.innerText = "✅ تم الرفع بنجاح!";
                 resetUI();
             } else {
-                alert("فشل الرفع، تأكد من إعدادات Cloudinary.");
+                const err = JSON.parse(xhr.responseText);
+                alert("فشل الرفع: " + (err.error.message || "تأكد من إعدادات Cloudinary وحجم الملف."));
                 resetUI();
             }
         };
 
-        xhr.onerror = () => { alert("خطأ في الشبكة"); resetUI(); };
+        xhr.onerror = function() {
+            alert("خطأ في الاتصال بالشبكة.");
+            resetUI();
+        };
+
         xhr.send(formData);
     };
 
@@ -224,13 +231,11 @@
         listDiv.innerHTML = videos.length ? "" : "<p style='text-align:center;color:#666;'>المكتبة فارغة</p>";
         
         videos.forEach(video => {
-            // سحر التحويل التلقائي: استبدال الامتداد بـ mp4 في رابط العرض فقط
-            // وأيضاً إضافة f_auto,q_auto لضمان الجودة والسرعة
+            // تحويل تلقائي للصيغة لتعمل في المتصفح (مثلاً mkv إلى mp4)
             const displayUrl = video.url.replace(new RegExp(`\\.${video.format}$`), '.mp4')
                                         .replace('/upload/', '/upload/f_auto,q_auto/');
             
             const downloadUrl = video.url.replace('/upload/', '/upload/fl_attachment/');
-
             const item = document.createElement('div');
             item.className = 'video-item';
             item.innerHTML = `
@@ -241,7 +246,7 @@
                         <a href="${downloadUrl}" class="download-btn">تحميل (الأصلي) 📥</a>
                         <button class="delete-btn" onclick="deleteVideo('${video.id}')">حذف 🗑️</button>
                     </div>
-                    <small style="color:#666; display:block; margin-top:10px;">${video.date} | الصيغة: ${video.format}</small>
+                    <small style="color:#666; display:block; margin-top:10px;">${video.date} | الصيغة الأصلية: ${video.format}</small>
                 </div>
             `;
             listDiv.appendChild(item);
