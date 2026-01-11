@@ -1,22 +1,33 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <title>محمل الفيديو السريع</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Player</title>
-    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
-        .video-js { width: 100% !important; height: 100% !important; }
+        body { font-family: -apple-system, sans-serif; background: #000; color: #fff; text-align: center; padding: 20px; }
+        input { width: 90%; padding: 15px; border-radius: 10px; border: none; margin: 20px 0; font-size: 16px; }
+        button { background: #34c759; color: white; padding: 15px 30px; border: none; border-radius: 10px; font-weight: bold; width: 90%; }
+        .info { font-size: 12px; color: #888; margin-top: 20px; }
     </style>
 </head>
 <body>
+    <h2>📥 محمل الفيديو الذكي</h2>
+    <p>ضع الرابط وسنتعرف عليه تلقائياً</p>
+    
+    <input type="text" id="urlInput" placeholder="الصق الرابط هنا...">
+    <button onclick="startDownload()">تحميل الآن</button>
 
-    <video id="vid" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto">
-        <source src="https://abra--5e4bd524.api.cosmic-crab.buzz/c08625d599d38e7450b5a8aae1c1c93ad3eb6eb5/%D9%85%D9%88%D9%83%D8%A7%20%D9%85%D9%88%D9%83%D8%A7%20%281993%29/%5BMo7tas%5D%20%D9%85%D9%88%D9%83%D8%A7%20%D9%85%D9%88%D9%83%D8%A7%20-%2001%20%5B720p%5D%20%28Darkulime%29.mkv?api-key=8acbcf1e-732c-4574-a3bf-27e6a85b86f1&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjgyMjg2ODksInJhdGUiOiI1TSIsInJvbGUiOiJmcmVlIiwic2Vzc2lvbklEIjoiTVRjMk5qTXpORGMxTW54T2QzZEJUa1pzVUZORk5VUlJWbWhZVlZVMVVGTlZiRk5VVm1kNVYxWnNVMVpGUmtWU1JWRXdUVEE1V0ZacVVrbE5hazVLVTBVMVNGTlZNVWRXYTNoaFRXc3hSVlpFV2tkTk1FVTlmUFhVQTl0VjJsOURkcEh0RGEzVjJoTlM1N1lzV3Rfd0s2VW5sUGl6N2tOUyIsImRvbWFpbiI6IndlYnRvci5pbyIsImFnZW50IjoiTW96aWxsYS81LjAgKE1hY2ludG9zaDsgSW50ZWwgTWFjIE9TIFggMTBfMTVfNykgQXBwbGVXZWJLaXQvNjA1LjEuMTUgKEtIVE1MLCBsaWtlIEdlY2tvKSBWZXJzaW9uLzE2LjYuMSBTYWZhcmkvNjA1LjEuMTUiLCJyZW1vdGVBZGRyZXNzIjoiMjAwMToxNmE0OjIwNTozZWM2OjlkMTU6Zjg3Nzo1NmVjOjg1Y2IifQ.hWYPhAgk3L86ok8J24Dqbk5SHQN4ShUoXhjXIvd7T-o" 
-        type="video/webm">
-    </video>
+    <div class="info">يدعم يوتيوب، تيك توك، وغيرها..</div>
 
-    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <script>
+        function startDownload() {
+            const url = document.getElementById('urlInput').value;
+            if(!url) return alert("ضع الرابط أولاً!");
+            
+            // هذا الكود يوجه الرابط لخدمة معالجة تلقائية (API) ليعمل على الأيفون
+            window.location.href = "https://9xbuddy.com/process?url=" + encodeURIComponent(url);
+        }
+    </script>
 </body>
 </html>
