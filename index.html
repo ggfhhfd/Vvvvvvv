@@ -1,75 +1,39 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body { background: #121212; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        textarea { width: 90%; height: 100px; padding: 15px; border-radius: 10px; background: #1e1e1e; color: white; border: 1px solid #333; font-size: 18px; margin-bottom: 15px; }
-        select { width: 90%; padding: 12px; border-radius: 8px; background: #333; color: white; border: 1px solid #444; margin-bottom: 15px; cursor: pointer; }
-        button { padding: 15px 30px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; background: #28a745; color: white; font-size: 18px; transition: 0.3s; }
-        button:hover { background: #218838; }
-    </style>
-</head>
-<body>
+<script>
+    // دالة النطق المحسنة
+    function speakText() {
+        const inputText = document.getElementById('inputText').value;
+        if (!inputText) return alert("اكتب شي يا خوي!");
 
-    <h2>🎤 اختر الصوت اللي يعجبك</h2>
-    
-    <textarea id="inputText" placeholder="اكتب النص هنا..."></textarea>
-    
-    <p>اختر من قائمة الأصوات المتاحة في جهازك:</p>
-    <select id="voiceSelect">
-        <option value="">جاري تحميل الأصوات...</option>
-    </select>
-    
-    <br>
-    <button onclick="speakText()">📣 نطق النص بالصوت المختار</button>
+        // إلغاء أي عمليات نطق معلقة
+        window.speechSynthesis.cancel();
 
-    <script>
+        const msg = new SpeechSynthesisUtterance(inputText);
+        
+        // جلب الأصوات والتأكد منها
+        let voices = window.speechSynthesis.getVoices();
         const voiceSelect = document.getElementById('voiceSelect');
-        const inputText = document.getElementById('inputText');
-        let voices = [];
-
-        // دالة لجلب الأصوات المتوفرة في النظام (آيفون، أندرويد، ويندوز)
-        function loadVoices() {
-            voices = window.speechSynthesis.getVoices();
-            voiceSelect.innerHTML = ''; // مسح القائمة القديمة
-            
-            voices.forEach((voice, i) => {
-                const option = document.createElement('option');
-                option.value = i;
-                // عرض اسم الصوت واللغة عشان تفرق بينهم
-                option.textContent = `${voice.name} (${voice.lang})`;
-                
-                // تحديد صوت "ماجد" أو أصوات العربية تلقائياً لو لقيتها
-                if (voice.lang.includes('ar')) {
-                    option.selected = true;
-                }
-                voiceSelect.appendChild(option);
-            });
+        
+        if (voices.length > 0) {
+            msg.voice = voices[voiceSelect.value];
         }
 
-        // تحديث القائمة عند تغير الأصوات (ضروري لبعض المتصفحات)
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-        loadVoices();
+        msg.lang = 'ar-SA';
+        msg.rate = 0.9;
+        msg.pitch = 1.0;
 
-        function speakText() {
-            const text = inputText.value;
-            if (!text) return alert("اكتب شي يا خوي!");
+        // تنبيه في حال وجود خطأ
+        msg.onerror = (event) => {
+            console.error('خطأ في النطق:', event.error);
+            alert("حدث خطأ في محرك الصوت، جرب تحديث الصفحة.");
+        };
 
-            window.speechSynthesis.cancel(); // إلغاء أي نطق شغال
+        window.speechSynthesis.speak(msg);
+    }
 
-            const msg = new SpeechSynthesisUtterance(text);
-            
-            // اختيار الصوت اللي حددته من القائمة
-            if (voices[voiceSelect.value]) {
-                msg.voice = voices[voiceSelect.value];
-            }
-
-            msg.rate = 0.9; // سرعة النطق
-            msg.pitch = 1.0; // درجة الصوت
-            
-            window.speechSynthesis.speak(msg);
+    // تأكيد تحميل الأصوات عند فتح الصفحة
+    window.onload = () => {
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
         }
-    </script>
-</body>
-</html>
+    };
+</script>
