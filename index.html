@@ -2,32 +2,101 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>محمل الفيديو السريع</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المشغل الذكي النهائي</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #000; color: #fff; text-align: center; padding: 20px; }
-        input { width: 90%; padding: 15px; border-radius: 10px; border: none; margin: 20px 0; font-size: 16px; }
-        button { background: #34c759; color: white; padding: 15px 30px; border: none; border-radius: 10px; font-weight: bold; width: 90%; }
-        .info { font-size: 12px; color: #888; margin-top: 20px; }
+        body { font-family: sans-serif; background: #000; color: #fff; text-align: center; padding: 15px; }
+        .box { background: #111; padding: 20px; border-radius: 20px; border: 2px solid #00c853; margin-bottom: 20px; }
+        input { width: 90%; padding: 12px; border-radius: 10px; border: none; background: #222; color: #fff; margin-bottom: 10px; }
+        button { width: 100%; padding: 12px; background: #00c853; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .card { background: #111; padding: 15px; border-radius: 20px; margin-top: 15px; border: 1px solid #333; }
+        video { width: 100%; border-radius: 15px; display: none; background: #000; margin-top: 10px; }
+        .status { font-size: 13px; color: #00c853; margin-bottom: 10px; }
+        .error-btn { display: none; background: #ff5252; color: white; padding: 10px; text-decoration: none; border-radius: 8px; font-size: 12px; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <h2>📥 محمل الفيديو الذكي</h2>
-    <p>ضع الرابط وسنتعرف عليه تلقائياً</p>
-    
-    <input type="text" id="urlInput" placeholder="الصق الرابط هنا...">
-    <button onclick="startDownload()">تحميل الآن</button>
 
-    <div class="info">يدعم يوتيوب، تيك توك، وغيرها..</div>
+<div class="box">
+    <h3>نظام الحفظ والتشغيل الفوري ⚡</h3>
+    <input type="text" id="u" placeholder="ألصق رابط الفيديو هنا...">
+    <button onclick="add()">إضافة وحفظ</button>
+</div>
 
-    <script>
-        function startDownload() {
-            const url = document.getElementById('urlInput').value;
-            if(!url) return alert("ضع الرابط أولاً!");
+<div id="list"></div>
+
+<script>
+    let vids = JSON.parse(localStorage.getItem('v_list')) || [];
+
+    function render() {
+        const list = document.getElementById('list');
+        list.innerHTML = '';
+        vids.forEach((url, i) => {
+            const id = 'v' + i;
+            list.innerHTML += `
+                <div class="card">
+                    <div id="st-${id}" class="status">جاري التجهيز...</div>
+                    <video id="vid-${id}" controls playsinline></video>
+                    <a id="dl-${id}" class="error-btn" href="${url}" target="_blank">رابط البث منتهي أو الصيغة غير مدعومة - اضغط هنا للفتح المباشر</a>
+                    <button onclick="del(${i})" style="background:#444; margin-top:10px; height:30px; padding:0; font-size:11px;">حذف الفيديو</button>
+                </div>
+            `;
+            manage(url, id);
+        });
+    }
+
+    async function manage(url, id) {
+        const v = document.getElementById(`vid-${id}`);
+        const s = document.getElementById(`st-${id}`);
+        const d = document.getElementById(`dl-${id}`);
+
+        // محاولة الحفظ في الذاكرة (Cache)
+        try {
+            const cache = await caches.open('v-vault');
+            const match = await cache.match(url);
             
-            // هذا الكود يوجه الرابط لخدمة معالجة تلقائية (API) ليعمل على الأيفون
-            window.location.href = "https://9xbuddy.com/process?url=" + encodeURIComponent(url);
+            if (match) {
+                const blob = await match.blob();
+                v.src = URL.createObjectURL(blob);
+                v.style.display = 'block';
+                s.innerText = "يعمل الآن من ذاكرة الجهاز (بدون إنترنت) ✅";
+            } else {
+                s.innerText = "جاري محاولة الحفظ والتشغيل المباشر...";
+                v.src = url;
+                v.style.display = 'block';
+                
+                // محاولة تحميل الملف في الخلفية للحفظ
+                fetch(url).then(async (res) => {
+                    if (res.ok) {
+                        const copy = res.clone();
+                        await cache.put(url, copy);
+                        s.innerText = "تم الحفظ بنجاح! سيعمل أوفلاين المرة القادمة.";
+                    }
+                }).catch(() => {
+                    s.innerText = "تشغيل مباشر (الرابط محمي من الحفظ)";
+                });
+            }
+        } catch (err) {
+            v.src = url;
+            v.style.display = 'block';
         }
-    </script>
+
+        v.onerror = () => {
+            v.style.display = 'none';
+            s.innerText = "⚠️ فشل التشغيل";
+            s.style.color = "#ff5252";
+            d.style.display = 'block';
+        };
+    }
+
+    function add() {
+        const val = document.getElementById('u').value;
+        if(val) { vids.push(val); localStorage.setItem('v_list', JSON.stringify(vids)); render(); }
+    }
+
+    function del(i) { vids.splice(i, 1); localStorage.setItem('v_list', JSON.stringify(vids)); render(); }
+
+    window.onload = render;
+</script>
 </body>
 </html>
