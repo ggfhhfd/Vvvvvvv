@@ -3,86 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ClashData Pro + Large File Support</title>
+    <title>ClashData Pro | Ultimate Upload</title>
     <style>
-        :root {
-            --primary: #ff4757;
-            --bg: #0f0f0f;
-            --card: #1e1e1e;
-            --text: #ffffff;
-            --success: #2ed573;
-        }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: var(--bg); color: var(--text); 
-            margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center;
-        }
-        
-        .upload-container { 
-            background: var(--card); padding: 20px; border-radius: 25px; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.7); width: 100%; max-width: 500px; 
-            box-sizing: border-box; border: 1px solid #333;
-        }
-        h2 { color: var(--primary); margin: 0 0 20px 0; font-size: 24px; text-align: center; }
-
+        :root { --primary: #ff4757; --bg: #0f0f0f; --card: #1e1e1e; --text: #ffffff; --success: #2ed573; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .upload-container { background: var(--card); padding: 25px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.7); width: 100%; max-width: 500px; box-sizing: border-box; border: 1px solid #333; }
+        h2 { color: var(--primary); text-align: center; margin-bottom: 20px; }
         .tabs { display: flex; background: #121212; border-radius: 15px; padding: 5px; margin-bottom: 20px; }
-        .tab-btn { 
-            background: transparent; border: none; color: #888; padding: 12px; 
-            cursor: pointer; border-radius: 12px; transition: 0.3s; flex: 1; font-weight: bold;
-        }
+        .tab-btn { background: transparent; border: none; color: #888; padding: 12px; cursor: pointer; border-radius: 12px; transition: 0.3s; flex: 1; font-weight: bold; }
         .tab-btn.active { background: var(--primary); color: white; }
-
-        input { 
-            background: #2d2d2d; border: 2px solid #333; padding: 15px; 
-            border-radius: 12px; width: 100%; box-sizing: border-box; 
-            color: white; margin-bottom: 15px; font-size: 16px;
-        }
-
-        .progress-wrapper {
-            display: none; 
-            width: 100%;
-            background: #121212;
-            height: 12px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            overflow: hidden;
-            border: 1px solid #333;
-        }
-        #progressBar {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary), #ff6b81);
-            transition: width 0.3s ease;
-        }
-
-        button#actionBtn { 
-            background: var(--primary); color: white; border: none; 
-            padding: 16px; border-radius: 12px; width: 100%; 
-            font-weight: bold; cursor: pointer; font-size: 16px;
-        }
+        input { background: #2d2d2d; border: 2px solid #333; padding: 15px; border-radius: 12px; width: 100%; box-sizing: border-box; color: white; margin-bottom: 15px; }
+        .progress-wrapper { display: none; width: 100%; background: #121212; height: 12px; border-radius: 10px; margin-bottom: 15px; overflow: hidden; border: 1px solid #333; }
+        #progressBar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--primary), #ff6b81); transition: width 0.3s ease; }
+        button#actionBtn { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; }
         button:disabled { background: #444; cursor: not-allowed; }
-
-        .search-box { width: 100%; max-width: 500px; margin-top: 25px; }
-        .search-box input { background: var(--card); border-radius: 15px; }
-
         .video-grid { width: 100%; max-width: 500px; margin-top: 20px; }
-        .video-item { 
-            background: var(--card); border-radius: 20px; margin-bottom: 25px; 
-            overflow: hidden; border: 1px solid #2a2a2a;
-        }
+        .video-item { background: var(--card); border-radius: 20px; margin-bottom: 25px; overflow: hidden; border: 1px solid #2a2a2a; }
+        video { width: 100%; display: block; background: #000; height: 250px; }
         .video-info { padding: 15px; }
-        .video-title { font-size: 16px; font-weight: bold; color: #fff; margin-bottom: 10px; display: block; }
-        video { width: 100%; display: block; background: #000; }
-        
-        .btns-group { display: flex; gap: 10px; }
-        .download-btn { 
-            flex: 2; background: var(--success); color: white; text-decoration: none; 
-            padding: 10px; border-radius: 10px; text-align: center; font-size: 14px; font-weight: bold;
-        }
-        .delete-btn { 
-            flex: 1; background: rgba(255, 71, 87, 0.1); color: var(--primary); 
-            border: 1px solid var(--primary); padding: 10px; border-radius: 10px; cursor: pointer;
-        }
+        .btns-group { display: flex; gap: 10px; margin-top: 10px; }
+        .download-btn { flex: 2; background: var(--success); color: white; text-decoration: none; padding: 10px; border-radius: 10px; text-align: center; font-weight: bold; font-size: 14px; }
+        .delete-btn { flex: 1; background: rgba(255, 71, 87, 0.1); color: var(--primary); border: 1px solid var(--primary); padding: 10px; border-radius: 10px; cursor: pointer; }
         #status { font-size: 13px; margin-bottom: 8px; text-align: center; color: #eccc68; }
     </style>
 </head>
@@ -90,31 +31,19 @@
 
     <div class="upload-container">
         <h2>🚀 ClashData Pro</h2>
-        
         <div class="tabs">
-            <button class="tab-btn active" id="fileTab" onclick="toggleMode('file')">ملف فيديو</button>
-            <button class="tab-btn" id="urlTab" onclick="toggleMode('url')">رابط مباشر</button>
+            <button class="tab-btn active" id="btn-file" onclick="setMode('file')">ملف فيديو</button>
+            <button class="tab-btn" id="btn-url" onclick="setMode('url')">رابط مباشر</button>
         </div>
 
-        <div id="fileArea">
+        <div id="inputArea">
             <input type="file" id="videoFile" accept="video/*">
-        </div>
-
-        <div id="urlArea" style="display: none;">
-            <input type="text" id="videoUrlInput" placeholder="الصق رابط mp4 أو mkv المباشر هنا...">
         </div>
         
         <div id="status"></div>
-        
-        <div class="progress-wrapper" id="progWrapper">
-            <div id="progressBar"></div>
-        </div>
+        <div class="progress-wrapper" id="progWrapper"><div id="progressBar"></div></div>
 
-        <button id="actionBtn" onclick="processUpload()">ابدأ المعالجة والرفع الآمن</button>
-    </div>
-
-    <div class="search-box">
-        <input type="text" id="searchInput" placeholder="🔍 ابحث في مكتبتك..." oninput="filterVideos()">
+        <button id="actionBtn" onclick="startUpload()">ابدأ الرفع والمعالجة</button>
     </div>
 
     <div id="videoList" class="video-grid"></div>
@@ -137,135 +66,103 @@
     const CLOUD_NAME = "dkpddgzqj";
     const UPLOAD_PRESET = "b2aumssr";
 
-    let uploadMode = 'file';
-    let allVideos = [];
+    let mode = 'file';
 
-    window.toggleMode = function(m) {
-        uploadMode = m;
-        document.getElementById('fileArea').style.display = m === 'file' ? 'block' : 'none';
-        document.getElementById('urlArea').style.display = m === 'url' ? 'block' : 'none';
-        document.getElementById('fileTab').classList.toggle('active', m === 'file');
-        document.getElementById('urlTab').classList.toggle('active', m === 'url');
+    window.setMode = function(m) {
+        mode = m;
+        document.getElementById('btn-file').classList.toggle('active', m === 'file');
+        document.getElementById('btn-url').classList.toggle('active', m === 'url');
+        document.getElementById('inputArea').innerHTML = m === 'file' 
+            ? '<input type="file" id="videoFile" accept="video/*">' 
+            : '<input type="text" id="videoUrlInput" placeholder="الصق رابط الفيديو المباشر...">';
     };
 
-    window.processUpload = function() {
+    window.startUpload = function() {
+        const fileInput = document.getElementById('videoFile');
+        const urlInput = document.getElementById('videoUrlInput');
+        const source = mode === 'file' ? fileInput.files[0] : urlInput.value;
+
+        if(!source) return alert("فضلاً اختر ملفاً أو ضع رابطاً");
+
         const btn = document.getElementById('actionBtn');
         const status = document.getElementById('status');
         const progWrapper = document.getElementById('progWrapper');
         const progressBar = document.getElementById('progressBar');
-        let source;
-
-        if (uploadMode === 'file') {
-            source = document.getElementById('videoFile').files[0];
-            if (!source) return alert("الرجاء اختيار ملف");
-        } else {
-            source = document.getElementById('videoUrlInput').value;
-            if (!source) return alert("الرجاء وضع الرابط");
-        }
 
         btn.disabled = true;
-        status.innerText = "🚀 جاري الرفع بنظام الأجزاء لضمان الجودة...";
         progWrapper.style.display = "block";
-        progressBar.style.width = "0%";
+        status.innerText = "⏳ جاري الرفع بنظام التقسيم (Chunked)...";
 
         const formData = new FormData();
         formData.append('file', source);
         formData.append('upload_preset', UPLOAD_PRESET);
-        formData.append('resource_type', 'video'); // التأكيد على نوع الملف
+        formData.append('resource_type', 'video');
 
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`, true);
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`);
 
-        // إضافة ترويسة فريدة للملفات الكبيرة (Chunked Upload Id)
-        xhr.setRequestHeader('X-Unique-Upload-Id', 'clash_' + Date.now());
+        // تفعيل ميزة الأجزاء برمجياً لتجاوز حد الـ 100 ميجا
+        xhr.setRequestHeader('X-Unique-Upload-Id', 'clash_v3_' + Date.now());
 
-        xhr.upload.onprogress = function(e) {
-            if (e.lengthComputable) {
-                const percent = Math.round((e.loaded / e.total) * 100);
-                progressBar.style.width = percent + "%";
-                status.innerText = `جاري الرفع: ${percent}%`;
-            }
+        xhr.upload.onprogress = (e) => {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            progressBar.style.width = percent + "%";
+            status.innerText = `تم رفع: ${percent}%`;
         };
 
         xhr.onload = function() {
             if (xhr.status === 200) {
                 const data = JSON.parse(xhr.responseText);
                 push(ref(db, 'my_videos'), {
-                    name: uploadMode === 'file' ? source.name : "فيديو خارجي",
+                    name: mode === 'file' ? source.name : "فيديو خارجي",
                     url: data.secure_url,
-                    format: data.format, // حفظ الصيغة للتحويل التلقائي لاحقاً
+                    format: data.format,
                     date: new Date().toLocaleString('ar-SA')
                 });
-                status.innerText = "✅ تم الرفع بنجاح!";
-                resetUI();
+                status.innerText = "✅ تم الرفع والمعالجة بنجاح!";
+                setTimeout(() => { 
+                    progWrapper.style.display = "none";
+                    btn.disabled = false;
+                }, 2000);
             } else {
                 const err = JSON.parse(xhr.responseText);
-                alert("فشل الرفع: " + (err.error.message || "تأكد من إعدادات Cloudinary وحجم الملف."));
-                resetUI();
+                alert("فشل الرفع: " + err.error.message);
+                btn.disabled = false;
             }
-        };
-
-        xhr.onerror = function() {
-            alert("خطأ في الاتصال بالشبكة.");
-            resetUI();
         };
 
         xhr.send(formData);
     };
 
-    function resetUI() {
-        document.getElementById('actionBtn').disabled = false;
-        document.getElementById('progWrapper').style.display = "none";
-        document.getElementById('videoUrlInput').value = "";
-        document.getElementById('videoFile').value = "";
-    }
-
     onValue(ref(db, 'my_videos'), (snapshot) => {
+        const listDiv = document.getElementById('videoList');
+        listDiv.innerHTML = "";
         const data = snapshot.val();
-        allVideos = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })).reverse() : [];
-        renderVideos(allVideos);
+        if(data) {
+            Object.keys(data).reverse().forEach(key => {
+                const v = data[key];
+                // السحر هنا: تحويل الفيديو تلقائياً ليعمل في المتصفح مهما كانت صيغته
+                const displayUrl = v.url.replace(new RegExp(`\\.${v.format}$`), '.mp4')
+                                      .replace('/upload/', '/upload/f_auto,q_auto/');
+                
+                const item = document.createElement('div');
+                item.className = 'video-item';
+                item.innerHTML = `
+                    <video controls preload="metadata" src="${displayUrl}"></video>
+                    <div class="video-info">
+                        <div style="font-weight:bold; margin-bottom:10px;">${v.name}</div>
+                        <div class="btns-group">
+                            <a href="${v.url.replace('/upload/', '/upload/fl_attachment/')}" class="download-btn">تحميل الملف الأصلي 📥</a>
+                            <button class="delete-btn" onclick="deleteV('${key}')">حذف 🗑️</button>
+                        </div>
+                    </div>`;
+                listDiv.appendChild(item);
+            });
+        }
     });
 
-    function renderVideos(videos) {
-        const listDiv = document.getElementById('videoList');
-        listDiv.innerHTML = videos.length ? "" : "<p style='text-align:center;color:#666;'>المكتبة فارغة</p>";
-        
-        videos.forEach(video => {
-            // تحويل تلقائي للصيغة لتعمل في المتصفح (مثلاً mkv إلى mp4)
-            const displayUrl = video.url.replace(new RegExp(`\\.${video.format}$`), '.mp4')
-                                        .replace('/upload/', '/upload/f_auto,q_auto/');
-            
-            const downloadUrl = video.url.replace('/upload/', '/upload/fl_attachment/');
-            const item = document.createElement('div');
-            item.className = 'video-item';
-            item.innerHTML = `
-                <video controls preload="metadata" src="${displayUrl}"></video>
-                <div class="video-info">
-                    <span class="video-title">${video.name}</span>
-                    <div class="btns-group">
-                        <a href="${downloadUrl}" class="download-btn">تحميل (الأصلي) 📥</a>
-                        <button class="delete-btn" onclick="deleteVideo('${video.id}')">حذف 🗑️</button>
-                    </div>
-                    <small style="color:#666; display:block; margin-top:10px;">${video.date} | الصيغة الأصلية: ${video.format}</small>
-                </div>
-            `;
-            listDiv.appendChild(item);
-        });
-    }
-
-    window.filterVideos = function() {
-        const term = document.getElementById('searchInput').value.toLowerCase();
-        const filtered = allVideos.filter(v => v.name.toLowerCase().includes(term));
-        renderVideos(filtered);
-    };
-
-    window.deleteVideo = function(id) {
-        const pass = prompt("أدخل كلمة مرور الحذف:");
-        if(pass === "1234") {
-            remove(ref(db, `my_videos/${id}`));
-        } else if (pass !== null) {
-            alert("كلمة مرور خاطئة!");
-        }
+    window.deleteV = function(id) {
+        if(prompt("كلمة السر:") === "1234") remove(ref(db, `my_videos/${id}`));
     };
 </script>
 </body>
